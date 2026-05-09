@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Private course content (read-only reference)
+data/
+dist-electron/

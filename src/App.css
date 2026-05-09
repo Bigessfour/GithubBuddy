@@ -283,6 +283,13 @@
   min-width: 140px;
 }
 
+.local-content-notice {
+  font-size: 12px;
+  color: #4ade80;
+  margin-top: 8px;
+  font-family: var(--mono);
+}
+
 .hint {
   margin-top: 12px;
   font-size: 14px;

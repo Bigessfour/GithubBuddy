@@ -166,21 +166,74 @@ After saving, the new day immediately appears in the dropdowns. No rebuild requi
 
 ---
 
-## Getting Started (for Developers)
+## Getting Started – Installation & Running (Windows & macOS)
+
+Platoon Companion can be run in two ways:
+
+1. **Web version** (opens in your browser) – great for quick development and learning the UI.
+2. **Desktop version** (real native app window) – the full experience with future command execution.
+
+### Prerequisites (both platforms)
+
+- Node.js 20+ (we recommend the LTS version)
+- Git
+- For desktop: nothing extra needed — Electron downloads its own binaries on first run
+
+### Option A – Run in the Browser (Recommended while learning the UI)
 
 ```bash
-# 1. Install dependencies
+# 1. Clone the repository (or download the zip)
+git clone https://github.com/Bigessfour/GithubBuddy.git
+cd GithubBuddy
+
+# 2. Install all dependencies (this also installs Electron for later)
 npm install
 
-# 2. Start the development server (opens in browser)
+# 3. Start the development server
 npm run dev
+```
 
-# 3. (Later) Build for production
-npm run build
+The app will open automatically in your default browser at `http://localhost:5173`.
 
-# 4. (Later) Run as desktop app
+**On Windows:** Use the exact same commands in PowerShell, Command Prompt, or Git Bash.
+
+### Option B – Run as a Real Desktop Application (Windows or macOS)
+
+```bash
+# After you have run `npm install` once:
+
+# Start both the web dev server and the native desktop window together
 npm run electron:dev
 ```
+
+This command:
+- Starts Vite on port 5173 (with hot reload)
+- Opens a native application window (Windows or macOS)
+- Opens DevTools automatically so you can inspect the React app
+
+**First run on any computer** will download the Electron binary for your operating system (≈ 100–150 MB). This only happens once.
+
+**On Windows:** The same `npm run electron:dev` command works identically and opens a native Windows window.
+
+### Other Useful Commands
+
+| Command                    | What it does                                      | When to use                     |
+|---------------------------|---------------------------------------------------|---------------------------------|
+| `npm run dev`             | Web-only development server                       | Quick UI work in browser        |
+| `npm run electron:dev`    | Full desktop experience with hot reload           | Daily development of the app    |
+| `npm run build`           | Production build of the web app                   | Before packaging for distribution |
+| `npm run electron:build`  | Build the desktop app for Windows + macOS         | Creating distributable versions |
+| `npm test`                | Run the automated test suite                      | Before opening a Pull Request   |
+
+### Cross-Platform Notes
+
+- All commands above work on **Windows**, **macOS**, and **Linux**.
+- We deliberately use cross-platform tools (`electron-vite`, `concurrently`, `wait-on`) so students on any operating system have the same experience.
+- No platform-specific code or setup is required for v0.3.
+
+**Official documentation:**
+- [Electron Supported Platforms](https://www.electronjs.org/docs/latest/tutorial/supported-platforms)
+- [electron-vite Guide](https://electron-vite.org/guide/)
 
 ---
 
@@ -225,10 +278,29 @@ We believe in testing early so the app stays reliable as we add features.
 
 ## Roadmap (High Level)
 
-- **v0.1** (Now): React web app with day selector + Week 2 Day 4 guidance + copy buttons
-- **v0.2**: Add workspace folder picker + safe command execution preview
-- **v0.3**: Package as real Mac desktop app using Electron
-- **v1.0**: Complete coverage of first 2–3 weeks + progress tracking
+- **v0.1** (Completed): React web app with day selector + Week 2 Day 4 guidance + copy buttons
+- **v0.2** (Completed): Add workspace folder picker + safe command execution preview
+- **v0.3** (Completed): Package as real desktop app using Electron (Windows + macOS support)
+- **v0.4** (Current focus): Implement safe command execution via Electron IPC — allow users to actually run the commands from the checklist inside their chosen workspace folder, with preview + confirmation for safety
+- **v1.0**: Complete coverage of first 2–3 weeks + progress tracking + polished desktop experience
+
+### v0.4 – Safe Command Execution (Next)
+
+Now that we have a working cross-platform desktop app, the natural next step is to make the "Run" buttons functional.
+
+Planned work for v0.4:
+- Use Electron’s `ipcMain` / `ipcRenderer` to send commands from the renderer to the main process
+- Execute commands safely using Node’s `child_process` inside the user-selected workspace folder
+- Always show a clear preview of the command + require explicit confirmation before running
+- Display real-time output in the UI
+- Handle errors gracefully with friendly messages
+
+This will turn the app from a “cheat sheet + copy” tool into a true guided execution environment while still protecting beginners from dangerous commands.
+
+**Relevant documentation we will follow:**
+- [Inter-Process Communication (IPC)](https://www.electronjs.org/docs/latest/tutorial/ipc)
+- [child_process.exec / spawn](https://nodejs.org/api/child_process.html)
+- [Security Considerations for IPC](https://www.electronjs.org/docs/latest/tutorial/security#15-prefer-using-contextbridge-and-ipcrendererinvoke-over-sending-raw-data)
 
 ### v0.3 – Running as a Real Desktop App (Current Focus)
 
