@@ -184,6 +184,7 @@ function App() {
                     step={step}
                     isCompleted={completedSteps.has(step.id)}
                     onToggleComplete={toggleComplete}
+                    workspacePath={workspacePath}
                   />
                 ))}
               </div>

@@ -284,23 +284,49 @@ We believe in testing early so the app stays reliable as we add features.
 - **v0.4** (Current focus): Implement safe command execution via Electron IPC — allow users to actually run the commands from the checklist inside their chosen workspace folder, with preview + confirmation for safety
 - **v1.0**: Complete coverage of first 2–3 weeks + progress tracking + polished desktop experience
 
-### v0.4 – Safe Command Execution (Next)
+### v0.4 – Safe Command Execution (Completed)
 
-Now that we have a working cross-platform desktop app, the natural next step is to make the "Run" buttons functional.
+We have now implemented the ability to actually **run** the commands shown in the checklist directly from the app.
 
-Planned work for v0.4:
-- Use Electron’s `ipcMain` / `ipcRenderer` to send commands from the renderer to the main process
-- Execute commands safely using Node’s `child_process` inside the user-selected workspace folder
-- Always show a clear preview of the command + require explicit confirmation before running
-- Display real-time output in the UI
-- Handle errors gracefully with friendly messages
+**How it works (the documented way):**
 
-This will turn the app from a “cheat sheet + copy” tool into a true guided execution environment while still protecting beginners from dangerous commands.
+1. **Preload Script** (`electron/preload.ts`)
+   - Uses `contextBridge` to safely expose two methods to the React app:
+     - `selectWorkspace()` – opens a native folder picker
+     - `executeCommand(command, cwd)` – runs a shell command inside the chosen folder
+   - This is the only secure way to give the renderer limited access to system functionality.
 
-**Relevant documentation we will follow:**
-- [Inter-Process Communication (IPC)](https://www.electronjs.org/docs/latest/tutorial/ipc)
-- [child_process.exec / spawn](https://nodejs.org/api/child_process.html)
-- [Security Considerations for IPC](https://www.electronjs.org/docs/latest/tutorial/security#15-prefer-using-contextbridge-and-ipcrendererinvoke-over-sending-raw-data)
+2. **Main Process Handlers** (`electron/main.ts`)
+   - `'select-workspace'` → calls `dialog.showOpenDialog()`
+   - `'execute-command'` → uses Node’s `child_process.exec()` with an explicit `cwd` and timeout
+   - All dangerous work happens in the main process.
+
+3. **UI Layer**
+   - `WorkspaceSelector` now uses the real native dialog.
+   - `StepCard` shows a green **Run Command** button when a workspace is selected.
+   - Clicking Run shows a confirmation dialog with the exact command (preview).
+   - Results (stdout/stderr) are displayed below the step using the new `CommandOutput` component.
+
+**Safety features in v0.4:**
+- Commands are never executed without explicit user confirmation.
+- The full command is shown in the confirmation dialog.
+- Execution is limited to the user-selected workspace folder.
+- 30-second timeout prevents runaway commands.
+
+**Files added/modified in v0.4:**
+- `electron/preload.ts` – Safe API bridge
+- `electron/main.ts` – IPC handlers + command execution
+- `src/components/WorkspaceSelector.tsx` – Native dialog support
+- `src/components/StepCard.tsx` – Run button + confirmation
+- `src/components/CommandOutput.tsx` – Result display
+- `src/types/electron.d.ts` – TypeScript declarations for `window.electronAPI`
+
+**Key documentation references used:**
+- [Context Isolation & Preload Scripts](https://www.electronjs.org/docs/latest/tutorial/context-isolation)
+- [IPC (Renderer ↔ Main)](https://www.electronjs.org/docs/latest/tutorial/ipc)
+- [dialog.showOpenDialog](https://www.electronjs.org/docs/latest/api/dialog)
+- [child_process.exec](https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback)
+- [Security Best Practices](https://www.electronjs.org/docs/latest/tutorial/security)
 
 ### v0.3 – Running as a Real Desktop App (Current Focus)
 

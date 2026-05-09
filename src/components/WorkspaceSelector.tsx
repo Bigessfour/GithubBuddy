@@ -1,46 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 /**
- * WorkspaceSelector Component
+ * WorkspaceSelector – v0.4 Version with Real Native Dialog
  *
- * Allows the user to select a local workspace folder where they will run the terminal commands
- * from the daily guidance checklist.
+ * This component now uses the safe Electron API we exposed in preload.ts
+ * to open a real native folder picker dialog (instead of a browser prompt).
  *
- * Why this component exists (v0.2 of the roadmap):
- * - The original v1 was deliberately "display + copy only" for safety and to work in the browser immediately.
- * - v0.2 adds the ability to choose a folder so that, in a future version, we can actually execute
- *   the suggested commands inside that folder.
+ * Why this is better:
+ * - Gives users a familiar system folder picker on Windows and macOS
+ * - Much better UX than typing a path
+ * - Still completely safe because the actual dialog logic lives in the main process
  *
- * Educational explanation of the design (the documented way):
+ * The component receives `workspacePath` and `onWorkspaceChange` from the parent (App).
+ * When the user clicks "Choose Workspace Folder", we call:
+ *   window.electronAPI.selectWorkspace()
  *
- * 1. We store the selected path in React state (useState).
- *    - This follows the official React "Lifting State Up" and "Controlled Components" pattern.
- *    - Reference: https://react.dev/learn/sharing-state-between-components
+ * This returns a Promise<string | null>.
  *
- * 2. The actual folder selection UI is currently a simple button + simulated path.
- *    - In a pure web app we cannot access the real filesystem path for security reasons.
- *    - When we move to Electron (v0.3), we will replace the button handler with a call to
- *      Electron's `dialog.showOpenDialog()` (main process) + IPC, which returns a real native path.
- *    - By keeping the state shape as `string | null`, the rest of the app does not need to change.
- *    - This is the recommended "progressive enhancement" pattern for Electron + React apps.
- *    - Reference: https://www.electronjs.org/docs/latest/tutorial/application-architecture
- *
- * 3. We expose the selected path via props (onWorkspaceChange) so the parent (App) can pass it
- *    down to a future CommandRunner component. This is the documented "unidirectional data flow".
- *
- * 4. We show a clear visual indicator of whether a workspace is selected.
- *    - This follows accessibility best practices (clear status, no hidden state).
- *    - Reference: https://developer.mozilla.org/en-US/docs/Web/Accessibility
- *
- * Future safety note:
- * - Even when we add real execution, we will always show a preview + confirmation dialog first.
- * - We will never run commands without explicit user approval (principle of least surprise).
+ * Educational references:
+ * - dialog.showOpenDialog: https://www.electronjs.org/docs/latest/api/dialog#dialogshowopendialogoptions
+ * - Using contextBridge from renderer: https://www.electronjs.org/docs/latest/tutorial/context-isolation#exposing-apis
  */
 
 interface WorkspaceSelectorProps {
-  /** The currently selected workspace path (null if none chosen) */
   workspacePath: string | null;
-  /** Callback to update the workspace path in the parent */
   onWorkspaceChange: (path: string | null) => void;
 }
 
@@ -48,34 +31,22 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
   workspacePath,
   onWorkspaceChange,
 }) => {
-  const [isSelecting, setIsSelecting] = useState(false);
-
-  /**
-   * Handles the folder selection.
-   *
-   * Current (web) behavior:
-   * - We simulate the selection by prompting the user to type a path.
-   * - This is intentional for v0.2 so the UI works in the browser without Electron.
-   *
-   * Documented future Electron behavior:
-   * - We will use `window.electronAPI.selectWorkspace()` (exposed via preload script)
-   *   which calls `dialog.showOpenDialog({ properties: ['openDirectory'] })` in the main process.
-   * - This is the official, secure way to let users pick folders in desktop apps.
-   * - Reference: https://www.electronjs.org/docs/latest/api/dialog
-   */
-  const handleSelectWorkspace = () => {
-    setIsSelecting(true);
-
-    // For now (web-only v0.2): prompt for a path so the feature is usable immediately
-    const enteredPath = prompt(
-      'Enter the full path to your local workspace folder\n(e.g. /Users/you/Code/my-platoon-project)\n\nIn the final desktop app this will open a native folder picker.'
-    );
-
-    if (enteredPath && enteredPath.trim() !== '') {
-      onWorkspaceChange(enteredPath.trim());
+  const handleSelectWorkspace = async () => {
+    // Check if we are running inside Electron (desktop app)
+    if (window.electronAPI?.selectWorkspace) {
+      const selectedPath = await window.electronAPI.selectWorkspace();
+      if (selectedPath) {
+        onWorkspaceChange(selectedPath);
+      }
+    } else {
+      // Fallback for web-only development (prompt is ugly but works)
+      const enteredPath = prompt(
+        'Enter the full path to your workspace folder\n(e.g. /Users/you/Code/my-platoon-project)'
+      );
+      if (enteredPath && enteredPath.trim()) {
+        onWorkspaceChange(enteredPath.trim());
+      }
     }
-
-    setIsSelecting(false);
   };
 
   const handleClearWorkspace = () => {
@@ -84,20 +55,19 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
 
   return (
     <div className="workspace-selector">
-      <h3>Workspace Folder (v0.2 Preview)</h3>
+      <h3>Workspace Folder</h3>
       <p className="workspace-explanation">
-        Choose the folder on your computer where you want to run the commands from today&apos;s checklist.
-        This is the first step toward safe, one-click execution (coming in a later version).
+        Choose the folder on your computer where you want the commands from today&apos;s checklist to run.
+        This is required before you can use the <strong>Run</strong> buttons.
       </p>
 
       <div className="workspace-actions">
         <button
           type="button"
           onClick={handleSelectWorkspace}
-          disabled={isSelecting}
           className="workspace-button"
         >
-          {isSelecting ? 'Selecting...' : workspacePath ? 'Change Workspace' : 'Choose Workspace Folder'}
+          {workspacePath ? 'Change Workspace Folder' : 'Choose Workspace Folder'}
         </button>
 
         {workspacePath && (
@@ -118,7 +88,7 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
         </div>
       ) : (
         <p className="workspace-hint">
-          No workspace selected yet. Pick a folder so we know where to run commands.
+          No workspace selected. Pick a folder so the Run buttons become active.
         </p>
       )}
     </div>

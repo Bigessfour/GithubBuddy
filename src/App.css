@@ -442,6 +442,39 @@
   cursor: default;
 }
 
+/* Run button styles (v0.4) */
+.run-section {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.run-button {
+  padding: 8px 18px;
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.run-button:hover {
+  background: #16a34a;
+}
+
+.run-button:disabled {
+  background: #86efac;
+  cursor: wait;
+}
+
+.run-hint {
+  font-size: 12px;
+  color: var(--text);
+}
+
 .notes {
   font-size: 13px;
   color: var(--text);
@@ -620,4 +653,42 @@
   font-size: 13px;
   color: var(--text);
   font-style: italic;
+}
+
+/* CommandOutput styles (v0.4) */
+.command-output {
+  margin-top: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.command-output.success {
+  border-color: #4ade80;
+}
+
+.command-output.error {
+  border-color: #f87171;
+}
+
+.command-output-header {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--code-bg);
+}
+
+.command-output-content,
+.command-output-error {
+  margin: 0;
+  padding: 12px;
+  background: #111113;
+  color: #e5e7eb;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.command-output-error {
+  color: #fca5a5;
 }

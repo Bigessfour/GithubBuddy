@@ -1,51 +1,63 @@
 import React, { useState } from 'react';
 import type { Step } from '../types';
+import { CommandOutput } from './CommandOutput';
 
 /**
- * StepCard Component
+ * StepCard – v0.4 with Safe Command Execution
  *
- * Displays a single workflow step with:
- * - Checkbox for marking progress (persisted in localStorage via parent)
- * - Educational "why" paragraph explaining the GitHub best practice
- * - Syntax-highlighted command block with one-click copy using the Clipboard API
- * - Optional notes and a category badge for visual scanning
+ * This component now includes a "Run" button that appears when:
+ *   1. A workspace folder has been selected, AND
+ *   2. The step has a real command (not a comment starting with #)
  *
- * Key learning points demonstrated:
- * - useState for local UI state (the temporary "Copied!" feedback)
- * - Async/await with navigator.clipboard (modern, secure clipboard access)
- * - Conditional classNames and disabled state for UX feedback
- * - Accessibility: label wrapping checkbox, aria not strictly needed here but good practice
+ * Execution flow:
+ * 1. User clicks "Run"
+ * 2. We show a browser confirm dialog with the exact command (preview)
+ * 3. If user confirms, we call window.electronAPI.executeCommand(command, workspacePath)
+ * 4. We display the result using the CommandOutput component
+ *
+ * Why we show a confirmation dialog:
+ * - This is the documented "preview before action" safety pattern.
+ * - It prevents accidental execution of commands.
+ * - In a future version we can replace this with a beautiful custom modal.
+ *
+ * Security model:
+ * - The actual execution happens in the main process (see electron/main.ts)
+ * - The renderer only ever sends the command string and working directory.
+ * - No arbitrary code execution is possible from the UI.
  *
  * References:
- * - React useState: https://react.dev/reference/react/useState
- * - Clipboard API: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API
- * - React conditional rendering & className: https://react.dev/learn/conditional-rendering
+ * - IPC from renderer: https://www.electronjs.org/docs/latest/tutorial/ipc#renderer-to-main
+ * - child_process security considerations: https://nodejs.org/api/child_process.html#security
  */
 
 interface StepCardProps {
   step: Step;
   isCompleted: boolean;
   onToggleComplete: (id: string) => void;
+  workspacePath: string | null;
 }
 
 export const StepCard: React.FC<StepCardProps> = ({
   step,
   isCompleted,
   onToggleComplete,
+  workspacePath,
 }) => {
-  // Local state only for the copy button feedback animation (resets after 2s)
   const [copied, setCopied] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [commandResult, setCommandResult] = useState<{
+    output: string;
+    error?: string;
+    success: boolean;
+  } | null>(null);
 
-  /**
-   * Copies the command string to the user's clipboard.
-   * Uses the modern async Clipboard API (requires HTTPS or localhost).
-   * On success shows temporary "Copied!" text; on failure falls back to alert.
-   */
+  const isComment = step.command.trim().startsWith('#');
+  const canRun = workspacePath && !isComment;
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(step.command);
       setCopied(true);
-      // Auto-reset the button label so user knows they can copy again
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -53,10 +65,55 @@ export const StepCard: React.FC<StepCardProps> = ({
     }
   };
 
+  /**
+   * Handles the "Run" button click.
+   *
+   * Shows a confirmation dialog with the exact command the user is about to execute.
+   * This is the safety mechanism for v0.4.
+   */
+  const handleRunCommand = async () => {
+    if (!workspacePath || !window.electronAPI?.executeCommand) {
+      alert('Command execution is only available in the desktop app.');
+      return;
+    }
+
+    // Safety preview – show the exact command before running
+    const confirmed = window.confirm(
+      `You are about to run this command in:\n${workspacePath}\n\n` +
+      `${step.command}\n\n` +
+      `Do you want to continue?`
+    );
+
+    if (!confirmed) return;
+
+    setIsRunning(true);
+    setCommandResult(null);
+
+    try {
+      const result = await window.electronAPI.executeCommand(
+        step.command,
+        workspacePath
+      );
+
+      setCommandResult({
+        output: result.output || '',
+        error: result.error,
+        success: result.success,
+      });
+    } catch (err: any) {
+      setCommandResult({
+        output: '',
+        error: err?.message || 'Unknown error occurred while executing command',
+        success: false,
+      });
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
     <div className={`step-card ${isCompleted ? 'completed' : ''}`}>
       <div className="step-header">
-        {/* Checkbox + number label. Clicking anywhere on the label toggles completion */}
         <label className="complete-toggle">
           <input
             type="checkbox"
@@ -68,15 +125,11 @@ export const StepCard: React.FC<StepCardProps> = ({
         </label>
 
         <h3>{step.title}</h3>
-
-        {/* Visual category tag - color coded in CSS for quick scanning */}
         <span className={`category-badge ${step.category}`}>{step.category}</span>
       </div>
 
-      {/* The core educational content: why this step teaches good GitHub habits */}
       <p className="why">{step.why}</p>
 
-      {/* Command block with copy button positioned absolutely over the code */}
       <div className="command-block">
         <pre>
           <code>{step.command}</code>
@@ -91,7 +144,30 @@ export const StepCard: React.FC<StepCardProps> = ({
         </button>
       </div>
 
-      {/* Optional instructor notes or caveats */}
+      {/* v0.4: Run button – only shown when workspace is selected and command is not a comment */}
+      {canRun && (
+        <div className="run-section">
+          <button
+            type="button"
+            className="run-button"
+            onClick={handleRunCommand}
+            disabled={isRunning}
+          >
+            {isRunning ? 'Running...' : 'Run Command'}
+          </button>
+          <span className="run-hint">Executes in your selected workspace folder</span>
+        </div>
+      )}
+
+      {/* Show output after running */}
+      {commandResult && (
+        <CommandOutput
+          output={commandResult.output}
+          error={commandResult.error}
+          success={commandResult.success}
+        />
+      )}
+
       {step.notes && <p className="notes">{step.notes}</p>}
     </div>
   );
