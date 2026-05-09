@@ -531,3 +531,86 @@
   font-size: 13px;
   color: var(--text);
 }
+
+/* 
+  WorkspaceSelector styles (v0.2 feature)
+  
+  Why these styles are written this way:
+  - We keep new styles in the same App.css file for v1/v0.2 simplicity (no CSS modules yet).
+  - This follows the documented "start simple, extract later" approach recommended for small React apps.
+  - All new classes are prefixed with .workspace- to avoid accidental global collisions.
+  - Reference: https://vitejs.dev/guide/features.html#css
+*/
+
+.workspace-selector {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.workspace-selector h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.workspace-explanation {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.workspace-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.workspace-button,
+.workspace-clear-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--accent-border);
+}
+
+.workspace-button {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.workspace-clear-button {
+  background: transparent;
+  color: var(--text);
+}
+
+.workspace-path-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workspace-label {
+  font-size: 12px;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.workspace-path {
+  font-family: var(--mono);
+  background: var(--code-bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  word-break: break-all;
+}
+
+.workspace-hint {
+  font-size: 13px;
+  color: var(--text);
+  font-style: italic;
+}

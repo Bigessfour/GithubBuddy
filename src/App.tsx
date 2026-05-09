@@ -3,6 +3,7 @@ import './App.css';
 import { DaySelector } from './components/DaySelector';
 import { StepCard } from './components/StepCard';
 import { ProgressTracker } from './components/ProgressTracker';
+import { WorkspaceSelector } from './components/WorkspaceSelector';
 import { useDayGuidance } from './hooks/useDayGuidance';
 import type { DayGuidance } from './types';
 
@@ -42,6 +43,17 @@ function App() {
 
   // Set of step IDs that the user has marked complete. Using a Set for O(1) lookup and easy toggle.
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
+
+  /**
+   * Workspace path selected by the user (v0.2 feature).
+   *
+   * Why we add this state now:
+   * - It prepares the app for the "safe command execution" part of v0.2.
+   * - The shape (string | null) is intentionally simple so it can later be replaced
+   *   by a real path coming from Electron's native dialog without changing any other code.
+   * - This is the documented "future-proof state shape" pattern.
+   */
+  const [workspacePath, setWorkspacePath] = useState<string | null>(null);
 
   // Derived data: the full guidance object (or undefined). The hook uses useMemo internally.
   const guidance = useDayGuidance(selectedWeek, selectedDay);
@@ -129,6 +141,16 @@ function App() {
           </p>
         </section>
 
+        {/* 
+          Workspace folder picker (v0.2)
+          We render it here so the user sets the execution context before seeing the checklist.
+          This follows the documented "setup before action" UX pattern.
+        */}
+        <WorkspaceSelector
+          workspacePath={workspacePath}
+          onWorkspaceChange={setWorkspacePath}
+        />
+
         {/* Conditional main content: either the full checklist + sidebar, or a placeholder */}
         {guidance ? (
           <>
@@ -136,6 +158,21 @@ function App() {
               <h2>{guidance.title}</h2>
               <p className="summary">{guidance.summary}</p>
             </div>
+
+            {/* 
+              Safe Command Execution Preview (v0.2)
+              This section demonstrates the future "Run" capability without actually executing anything.
+              Why we show a preview first:
+              - It is the documented safe pattern (always confirm before running commands).
+              - Even when we add real execution via Electron child_process, we will keep this preview step.
+              - Reference: Principle of Least Surprise in UX design.
+            */}
+            {workspacePath && (
+              <div className="command-preview-banner">
+                Workspace selected: <code>{workspacePath}</code>. 
+                In the next version you will be able to preview and safely run commands here.
+              </div>
+            )}
 
             <div className="layout-grid">
               {/* Left column: the interactive checklist */}

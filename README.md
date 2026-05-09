@@ -19,6 +19,32 @@ Many students are new to the terminal and GitHub best practices. This app remove
 
 ---
 
+## Our Git Workflow – Leading by Example
+
+This project doesn't just *teach* GitHub best practices — it **follows them**.
+
+### How We Use GitHub in This Repository
+
+- The complete v1 (fully working React + TypeScript app with tests, educational comments, and documentation) was pushed directly to the `main` branch. This establishes a stable, working baseline that anyone can clone and run immediately.
+- All future development happens on **short-lived feature branches** (examples: `feat/add-week3-day1-guidance`, `feat/electron-desktop-packaging`, `feat/safe-command-execution`).
+- Changes are proposed via **Pull Requests** (initially to your fork at `Bigessfour/GithubBuddy`, then reviewed and merged into `main`).
+- We never commit directly to `main` after the initial baseline.
+- Branch names are descriptive and follow a consistent pattern (`feat/`, `fix/`, `docs/`, etc.).
+- Every PR includes a clear description linking back to the feature or educational goal.
+
+### Why We Do It This Way
+
+By applying the exact same workflow the app teaches, this project becomes a living example. Students (and instructors) can look at the commit history and branch structure of `GithubBuddy` and see professional GitHub flow in action — the same habits the Platoon Companion app is designed to instill.
+
+This is especially powerful for the Code Platoon AI DevOps course: the tool you use to learn best practices is itself built using those best practices.
+
+References we followed:
+- [GitHub Flow](https://docs.github.com/en/get-started/quickstart/github-flow)
+- [Pro Git – Branching](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging)
+- [Conventional Commits](https://www.conventionalcommits.org/)
+
+---
+
 ## Tech Stack & Why We Chose These Tools
 
 ### Languages
