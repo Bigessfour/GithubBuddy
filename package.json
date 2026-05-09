@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "electron:dev": "electron-vite dev",
-    "electron:build": "electron-vite build"
+    "electron:build": "electron-vite build",
+    "setup-course": "node scripts/setup-course.js",
+    "postinstall": "node scripts/setup-course.js --auto"
   },
   "dependencies": {
     "react": "^19.2.5",

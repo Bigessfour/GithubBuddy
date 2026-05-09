@@ -25,7 +25,7 @@
 
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 
 /**
  * Creates the main application window following official Electron security recommendations.
@@ -106,48 +106,85 @@ ipcMain.handle('select-workspace', async () => {
 });
 
 /**
- * Handler for 'execute-command'
+ * Handler for 'execute-command' (v0.5 Streaming Version)
  *
- * Runs a shell command inside a specific working directory.
- * This is the core of the "safe execution" feature.
+ * Uses `child_process.spawn` instead of `exec` to stream output in real time.
  *
- * Parameters:
- *   command - The exact command string shown to the user (e.g. "git checkout -b week2/day4-challenge")
- *   cwd     - The absolute path to the user's chosen workspace
+ * This follows the documented pattern for interactive/long-running commands in Electron.
  *
- * Returns an object the renderer can easily display:
- *   { success: boolean, output: string, error?: string }
+ * Flow:
+ * 1. Renderer calls invoke('execute-command', command, cwd)
+ * 2. Main starts the process with spawn
+ * 3. Main sends 'command-output' events for each chunk of stdout/stderr
+ * 4. When process exits, Main sends 'command-complete' with final status
  *
- * Security / Safety notes:
- * - We do NOT validate or sanitize the command in v0.4 (we show preview + confirmation in UI instead).
- * - We always pass an explicit `cwd` so commands run in the correct folder.
- * - We use `exec` with a reasonable timeout (30 seconds) to prevent hanging.
+ * Documentation References:
+ * - spawn: https://nodejs.org/api/child_process.html#child_processspawncommand-args-options
+ * - Streaming IPC: https://www.electronjs.org/docs/latest/tutorial/ipc#streaming-data
+ *
+ * Safety:
+ * - 60 second timeout (longer than v0.4 to allow real commands)
+ * - Explicit cwd
+ * - Preview + confirmation still happens in the UI
  */
-ipcMain.handle('execute-command', async (_event, command: string, cwd: string) => {
+ipcMain.handle('execute-command', (event, command: string, cwd: string) => {
   return new Promise((resolve) => {
-    exec(
-      command,
-      {
-        cwd,
-        timeout: 30000,           // 30 second timeout for safety
-        maxBuffer: 1024 * 1024,   // 1MB output buffer
-        windowsHide: true,        // On Windows, don't show a separate console window
-      },
-      (error, stdout, stderr) => {
-        if (error) {
-          resolve({
-            success: false,
-            output: stdout,
-            error: stderr || error.message,
-          });
-        } else {
-          resolve({
-            success: true,
-            output: stdout,
-          });
-        }
-      }
-    );
+    // Parse command into executable + args (simple split for v0.5)
+    const [cmd, ...args] = command.split(' ');
+
+    const child = spawn(cmd, args, {
+      cwd,
+      shell: true,                // Allows complex commands like "git checkout -b ..."
+      windowsHide: true,
+      timeout: 60000,             // 60 seconds for v0.5
+    });
+
+    let output = '';
+    let errorOutput = '';
+
+    // Stream stdout
+    child.stdout.on('data', (data) => {
+      const chunk = data.toString();
+      output += chunk;
+      event.sender.send('command-output', { type: 'stdout', data: chunk });
+    });
+
+    // Stream stderr
+    child.stderr.on('data', (data) => {
+      const chunk = data.toString();
+      errorOutput += chunk;
+      event.sender.send('command-output', { type: 'stderr', data: chunk });
+    });
+
+    child.on('close', (code) => {
+      const success = code === 0;
+      event.sender.send('command-complete', {
+        success,
+        output,
+        error: errorOutput || undefined,
+        exitCode: code,
+      });
+
+      resolve({
+        success,
+        output,
+        error: errorOutput || undefined,
+      });
+    });
+
+    child.on('error', (err) => {
+      event.sender.send('command-complete', {
+        success: false,
+        output,
+        error: err.message,
+      });
+
+      resolve({
+        success: false,
+        output,
+        error: err.message,
+      });
+    });
   });
 });
 

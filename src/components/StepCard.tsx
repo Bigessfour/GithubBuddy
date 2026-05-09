@@ -45,6 +45,8 @@ export const StepCard: React.FC<StepCardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [liveOutput, setLiveOutput] = useState('');
+  const [liveError, setLiveError] = useState('');
   const [commandResult, setCommandResult] = useState<{
     output: string;
     error?: string;
@@ -77,7 +79,6 @@ export const StepCard: React.FC<StepCardProps> = ({
       return;
     }
 
-    // Safety preview – show the exact command before running
     const confirmed = window.confirm(
       `You are about to run this command in:\n${workspacePath}\n\n` +
       `${step.command}\n\n` +
@@ -87,27 +88,41 @@ export const StepCard: React.FC<StepCardProps> = ({
     if (!confirmed) return;
 
     setIsRunning(true);
+    setLiveOutput('');
+    setLiveError('');
     setCommandResult(null);
 
-    try {
-      const result = await window.electronAPI.executeCommand(
-        step.command,
-        workspacePath
-      );
+    // v0.5: Set up streaming listeners
+    const cleanupOutput = window.electronAPI.onCommandOutput?.((chunk) => {
+      if (chunk.type === 'stdout') {
+        setLiveOutput((prev) => prev + chunk.data);
+      } else {
+        setLiveError((prev) => prev + chunk.data);
+      }
+    });
 
+    const cleanupComplete = window.electronAPI.onCommandComplete?.((result) => {
       setCommandResult({
         output: result.output || '',
         error: result.error,
         success: result.success,
       });
+      setIsRunning(false);
+      cleanupOutput?.();
+      cleanupComplete?.();
+    });
+
+    try {
+      await window.electronAPI.executeCommand(step.command, workspacePath);
     } catch (err: any) {
       setCommandResult({
-        output: '',
-        error: err?.message || 'Unknown error occurred while executing command',
+        output: liveOutput,
+        error: err?.message || 'Unknown error',
         success: false,
       });
-    } finally {
       setIsRunning(false);
+      cleanupOutput?.();
+      cleanupComplete?.();
     }
   };
 
@@ -159,8 +174,16 @@ export const StepCard: React.FC<StepCardProps> = ({
         </div>
       )}
 
-      {/* Show output after running */}
-      {commandResult && (
+      {/* v0.5: Show live streaming output while running, or final result */}
+      {isRunning && (liveOutput || liveError) && (
+        <CommandOutput
+          output={liveOutput}
+          error={liveError}
+          success={false} // still running
+        />
+      )}
+
+      {commandResult && !isRunning && (
         <CommandOutput
           output={commandResult.output}
           error={commandResult.error}

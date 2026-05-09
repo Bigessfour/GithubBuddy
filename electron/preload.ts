@@ -24,24 +24,33 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('electronAPI', {
   /**
    * Opens a native folder picker dialog.
-   * Returns the selected path or null if the user cancels.
    */
   selectWorkspace: (): Promise<string | null> => 
     ipcRenderer.invoke('select-workspace'),
 
   /**
-   * Executes a shell command inside a specific working directory.
-   * 
-   * @param command - The full command string (e.g. "git status")
-   * @param cwd - The absolute path to the workspace folder
-   * @returns Promise resolving to { success, output, error }
+   * Starts command execution with live streaming (v0.5).
    */
-  executeCommand: (command: string, cwd: string): Promise<{
-    success: boolean;
-    output: string;
-    error?: string;
-  }> => 
+  executeCommand: (command: string, cwd: string) => 
     ipcRenderer.invoke('execute-command', command, cwd),
+
+  /**
+   * Listen for live stdout/stderr chunks.
+   */
+  onCommandOutput: (callback: (data: { type: 'stdout' | 'stderr'; data: string }) => void) => {
+    const listener = (_event: any, data: any) => callback(data);
+    ipcRenderer.on('command-output', listener);
+    return () => ipcRenderer.removeListener('command-output', listener);
+  },
+
+  /**
+   * Listen for final command completion.
+   */
+  onCommandComplete: (callback: (result: any) => void) => {
+    const listener = (_event: any, result: any) => callback(result);
+    ipcRenderer.on('command-complete', listener);
+    return () => ipcRenderer.removeListener('command-complete', listener);
+  },
 });
 
 console.log('[Preload] v0.4 Preload script loaded – electronAPI exposed safely');

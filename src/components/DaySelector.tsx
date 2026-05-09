@@ -106,7 +106,7 @@ export const DaySelector: React.FC<DaySelectorProps> = ({
 
       {usingLocalContent && (
         <p className="local-content-notice">
-          Using local course content from <code>data/course-content/aico-echo</code>
+          Using local course content from <code>data/course-content/aico-echo</code> — full day focus loaded
         </p>
       )}
     </div>

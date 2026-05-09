@@ -179,6 +179,26 @@ Platoon Companion can be run in two ways:
 - Git
 - For desktop: nothing extra needed — Electron downloads its own binaries on first run
 
+### Getting the Course Content (Required for v0.6 Dynamic Focus)
+
+To enable the app to load the actual lesson, lab, and challenge content from the upstream repo, run:
+
+```bash
+npm run setup-course
+```
+
+The script will:
+- Prompt you for the upstream repo URL
+- Explain private vs public repo security implications
+- Guide you on using Personal Access Tokens or SSH keys (GitHub best practices)
+- Clone the repo into the correct location
+
+**Security Reminder**: The upstream repo is private. Use a fine-grained PAT with minimal scopes or an SSH key. Never commit credentials.
+
+Official GitHub guidance:
+- https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+- https://docs.github.com/en/authentication/connecting-to-github-with-ssh
+
 ### Option A – Run in the Browser (Recommended while learning the UI)
 
 ```bash
@@ -284,6 +304,23 @@ We believe in testing early so the app stays reliable as we add features.
 - **v0.4** (Current focus): Implement safe command execution via Electron IPC — allow users to actually run the commands from the checklist inside their chosen workspace folder, with preview + confirmation for safety
 - **v1.0**: Complete coverage of first 2–3 weeks + progress tracking + polished desktop experience
 
+### v0.5 – Live Streaming Command Output (Completed)
+
+In v0.5 we upgraded the command execution from batch (`exec`) to real-time streaming (`spawn`).
+
+**Key improvements:**
+- Output appears live in the UI as the command runs
+- Separate handling for stdout and stderr
+- Uses proper IPC event streaming (`command-output` and `command-complete` events)
+
+**Documentation followed:**
+- Node.js spawn: https://nodejs.org/api/child_process.html#child_processspawncommand-args-options
+- Electron IPC streaming: https://www.electronjs.org/docs/latest/tutorial/ipc
+
+This makes longer commands (git clone, builds, tests) feel responsive.
+
+---
+
 ### v0.4 – Safe Command Execution (Completed)
 
 We have now implemented the ability to actually **run** the commands shown in the checklist directly from the app.
@@ -330,6 +367,28 @@ We follow the official `electron-vite` + Electron security model:
 - [dialog.showOpenDialog](https://www.electronjs.org/docs/latest/api/dialog)
 - [child_process.exec](https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback)
 - [Security Best Practices](https://www.electronjs.org/docs/latest/tutorial/security)
+
+### v0.6 – Dynamic Day Focus from Upstream Repo (Completed)
+
+The app can now load the **full content** of the lesson, lab, and challenge files directly from your local clone of the upstream course repository.
+
+**How it works:**
+- Select a Week and Day in the UI.
+- If you have cloned `https://github.com/CodePlatoon/aico-echo` into `data/course-content/aico-echo`, the app automatically reads all Markdown files in that day’s folder.
+- The full content is displayed instead of (or alongside) the app’s educational guidance.
+
+**Setup (one-time):**
+```bash
+git clone https://github.com/CodePlatoon/aico-echo.git data/course-content/aico-echo
+```
+
+When the local clone is present, the DaySelector shows “full day focus loaded”.
+
+If the clone is missing, the app shows a helpful message directing you to the README instructions.
+
+**Documentation followed:**
+- Vite conditional logic: https://vitejs.dev/guide/ssr.html#conditional-logic
+- Electron filesystem access: https://www.electronjs.org/docs/latest/tutorial/sandbox#preload-scripts
 
 ### v0.3 – Running as a Real Desktop App (Current Focus)
 

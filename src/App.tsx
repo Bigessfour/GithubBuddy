@@ -4,7 +4,9 @@ import { DaySelector } from './components/DaySelector';
 import { StepCard } from './components/StepCard';
 import { ProgressTracker } from './components/ProgressTracker';
 import { WorkspaceSelector } from './components/WorkspaceSelector';
+import { DayFocus } from './components/DayFocus';
 import { useDayGuidance } from './hooks/useDayGuidance';
+import { useDayFocus } from './hooks/useDayFocus';
 import type { DayGuidance } from './types';
 
 /**
@@ -57,6 +59,9 @@ function App() {
 
   // Derived data: the full guidance object (or undefined). The hook uses useMemo internally.
   const guidance = useDayGuidance(selectedWeek, selectedDay);
+
+  // v0.6: Dynamic full content from local upstream repo clone
+  const dayFocus = useDayFocus(selectedWeek, selectedDay);
 
   // === Effects ===
 
@@ -151,22 +156,16 @@ function App() {
           onWorkspaceChange={setWorkspacePath}
         />
 
-        {/* Conditional main content: either the full checklist + sidebar, or a placeholder */}
-        {guidance ? (
+        {/* v0.6: Dynamic Day Focus from upstream repo (full content) */}
+        {dayFocus ? (
+          <DayFocus focus={dayFocus} />
+        ) : guidance ? (
           <>
             <div className="guidance-header">
               <h2>{guidance.title}</h2>
               <p className="summary">{guidance.summary}</p>
             </div>
 
-            {/* 
-              Safe Command Execution Preview (v0.2)
-              This section demonstrates the future "Run" capability without actually executing anything.
-              Why we show a preview first:
-              - It is the documented safe pattern (always confirm before running commands).
-              - Even when we add real execution via Electron child_process, we will keep this preview step.
-              - Reference: Principle of Least Surprise in UX design.
-            */}
             {workspacePath && (
               <div className="command-preview-banner">
                 Workspace selected: <code>{workspacePath}</code>. 
@@ -175,7 +174,6 @@ function App() {
             )}
 
             <div className="layout-grid">
-              {/* Left column: the interactive checklist */}
               <div className="checklist">
                 <h3>Step-by-step checklist</h3>
                 {guidance.steps.map((step) => (
@@ -189,7 +187,6 @@ function App() {
                 ))}
               </div>
 
-              {/* Right column: progress + best practices (sticky on desktop) */}
               <aside className="sidebar">
                 <ProgressTracker
                   steps={guidance.steps}
@@ -210,7 +207,11 @@ function App() {
         ) : (
           <div className="no-guidance">
             <p>No guidance available for Week {selectedWeek} Day {selectedDay} yet.</p>
-            <p>Week 2 Day 4 is fully supported. More days coming soon!</p>
+            <p>
+              To load the actual lesson, lab, and challenge content from the upstream repo, 
+              clone it into <code>data/course-content/aico-echo</code>.
+            </p>
+            <p>See the README for setup instructions.</p>
           </div>
         )}
       </main>
