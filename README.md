@@ -290,6 +290,39 @@ All tests pass in 81 milliseconds. This gives us confidence that the data model 
 
 Future tests will cover the custom hook and individual React components.
 
+### Enabling Branch Protection (Required for Professional Workflow)
+
+Now that we have automated tests, we can protect the `main` branch so that:
+
+- Every change must come through a Pull Request
+- All tests must pass before merging is allowed
+
+**Step-by-step (with official documentation links):**
+
+1. Go to your repository → **Settings** → **Branches** → **Branch protection rules** → **Add rule** for the branch `main`.
+
+2. Enable these two settings (these are GitHub's recommended defaults for protected branches):
+
+   - **Require a pull request before merging**  
+     → Documentation: [About protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-pull-request-reviews-before-merging)
+
+   - **Require status checks to pass before merging**  
+     → Select the check named **"Test / Run Tests"** (this comes from our `.github/workflows/test.yml`)  
+     → Documentation: [Require status checks before merging](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-status-checks-before-merging)
+
+3. Save the rule.
+
+After this is enabled, the only way code reaches `main` is through a reviewed, passing Pull Request — exactly the GitHub Flow we teach in the app.
+
+**Why this is the documented best practice**:
+- It prevents broken code from landing on the stable branch.
+- It creates an auditable history of every change.
+- It is the same process used by professional teams and open-source projects.
+
+References:
+- [GitHub Flow](https://docs.github.com/en/get-started/quickstart/github-flow)
+- [About branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches)
+
 ---
 
 ## Contributing / Explaining to Class

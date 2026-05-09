@@ -1,0 +1,72 @@
+# GitHub Actions Workflow: Automated Testing
+#
+# This workflow runs our Vitest tests on every push and every pull request.
+# It is the foundation for the branch protection rule we will enable on `main`.
+#
+# Why we use GitHub Actions (the documented way):
+# - It is GitHub's official, free CI/CD platform integrated directly into the repository.
+# - Runs in the cloud — no need to maintain your own build servers.
+# - Triggers automatically on the events we care about (push + pull_request).
+# - Supports matrix builds, caching, and artifacts out of the box.
+#
+# Learning resources (click the links):
+# - GitHub Actions official documentation: https://docs.github.com/en/actions
+# - Workflow syntax reference: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
+# - About branch protection rules: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches
+# - Using status checks with protected branches: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-status-checks-before-merging
+
+name: Test
+
+# When should this workflow run?
+# - push to any branch: so we catch broken tests immediately
+# - pull_request targeting any branch: so PRs cannot be merged if tests fail
+# This is the standard recommended trigger pattern for protecting main.
+# Reference: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
+on:
+  push:
+    branches: [ main, 'feat/**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the code
+      # The official action that clones the repository so the runner can access our files.
+      # Reference: https://github.com/actions/checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      # We use the official Node.js setup action and specify the same version we develop with.
+      # Caching npm dependencies speeds up subsequent runs significantly.
+      # Reference: https://github.com/actions/setup-node
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # 3. Install dependencies
+      # This is the documented way to ensure a clean, reproducible environment.
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Run the tests
+      # We use the script we defined in package.json ("test": "vitest")
+      # The --run flag makes Vitest exit after running once (important in CI).
+      # If any test fails, this step fails → the workflow fails → the PR cannot be merged.
+      - name: Run Vitest tests
+        run: npm test -- --run
+
+      # 5. (Future) Add linting or build step here if desired
+      # - name: Lint
+      #   run: npm run lint
+      # - name: Build
+      #   run: npm run build
+#
+# After pushing this workflow, the status check named "Test / Run Tests"
+# will appear in the PR checks and can be required for merging to main.
