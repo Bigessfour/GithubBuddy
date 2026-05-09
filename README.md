@@ -230,6 +230,39 @@ We believe in testing early so the app stays reliable as we add features.
 - **v0.3**: Package as real Mac desktop app using Electron
 - **v1.0**: Complete coverage of first 2–3 weeks + progress tracking
 
+### v0.3 – Running as a Real Desktop App (Current Focus)
+
+We have now implemented the foundation for running Platoon Companion as a native macOS (and Windows/Linux) desktop application using Electron.
+
+**New commands added:**
+
+```bash
+# Run the app as a real desktop window with hot reload
+npm run electron:dev
+
+# Build the desktop app for distribution
+npm run electron:build
+```
+
+**What we did (the documented way):**
+
+- Created `electron/main.ts` – the main process that creates the native window
+- Created `electron/preload.ts` – the secure bridge (following context isolation best practices)
+- Created `electron.vite.config.ts` – the official `electron-vite` configuration
+- Updated `package.json` with proper Electron scripts and entry point
+
+All new files contain extensive educational comments with direct links to the official documentation.
+
+**Key documentation links for learning:**
+
+- [Electron Process Model](https://www.electronjs.org/docs/latest/tutorial/process-model)
+- [BrowserWindow API](https://www.electronjs.org/docs/latest/api/browser-window)
+- [Security Best Practices](https://www.electronjs.org/docs/latest/tutorial/security)
+- [electron-vite Official Guide](https://electron-vite.org/)
+- [Context Isolation & Preload Scripts](https://www.electronjs.org/docs/latest/tutorial/context-isolation)
+
+This puts us on track to deliver a polished desktop experience while teaching students the correct, secure way to build cross-platform desktop apps.
+
 ---
 
 ## Proof of Correctness – Automated Tests
