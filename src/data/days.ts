@@ -17,8 +17,6 @@
  * - Conventional Commits: https://www.conventionalcommits.org/
  */
 
-/* eslint-disable max-lines */ // This file contains the full day data; long but intentional for v1
-
 import type { DayGuidance } from '../types';
 
 /**

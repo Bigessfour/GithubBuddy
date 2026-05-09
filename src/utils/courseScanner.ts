@@ -19,19 +19,22 @@
  *   - Source: https://www.electronjs.org/docs/latest/tutorial/context-isolation
  *
  * IMPLEMENTATION STRATEGY:
- * - In **browser mode** (`npm run dev`): This file must never touch Node APIs.
- *   All functions return empty results → the app falls back to hardcoded data.
- * - In **desktop mode** (Electron): We can safely use `fs`/`path` because the
- *   code only runs after going through the preload bridge (future improvement).
+ * - In **browser mode** (`npm run dev`): No Node APIs — empty scan → hardcoded weeks/days.
+ * - In **desktop mode** (Electron): The preload script exposes `getCourseContentScan()` which
+ *   runs `fs` synchronously in the preload context. The renderer must never call `require('fs')`
+ *   or import `node:fs` — Vite bundles the renderer as browser ESM where that throws
+ *   `ReferenceError: require is not defined`.
  *
- * For v0.4 we keep it simple: the dynamic scanner is **Electron-only**.
- * The browser version always uses the hardcoded Week 2 Day 4 guidance.
+ * References:
+ * - Vite: https://vitejs.dev/guide/ssr.html#built-in-node-modules
+ * - Electron context isolation: https://www.electronjs.org/docs/latest/tutorial/context-isolation
  */
 
-import type { DayGuidance } from '../types';
-
-// Runtime environment detection
-const isElectronRuntime = typeof window !== 'undefined' && !!(window as any).electronAPI;
+/** True when the preload bridge exposes synchronous course scan (desktop app only). */
+const usePreloadCourseScan =
+  typeof window !== 'undefined' &&
+  typeof (window as Window & { electronAPI?: { getCourseContentScan?: () => unknown } }).electronAPI
+    ?.getCourseContentScan === 'function';
 
 /* ============================================================
    BROWSER-SAFE (NO-OP) IMPLEMENTATIONS
@@ -47,63 +50,27 @@ function browserGetAvailableWeeksAndDays(): Array<{ week: number; days: number[]
 }
 
 /* ============================================================
-   ELECTRON IMPLEMENTATIONS (only loaded when safe)
+   ELECTRON (preload bridge — no Node in renderer bundle)
    ============================================================ */
 
-let fs: any;
-let nodePath: any;
-let COURSE_CONTENT_PATH = '';
-
-if (isElectronRuntime) {
-  // We are inside Electron → it is safe to require Node modules
-  // This block only executes in the desktop app.
-  fs = require('fs');
-  nodePath = require('path');
-  COURSE_CONTENT_PATH = nodePath.join(process.cwd(), 'data', 'course-content', 'aico-echo');
+function getScanFromPreload(): { hasLocal: boolean; weeks: Array<{ week: number; days: number[] }> } {
+  try {
+    const api = (window as Window & { electronAPI?: { getCourseContentScan?: () => { hasLocal: boolean; weeks: Array<{ week: number; days: number[] }> } } }).electronAPI;
+    if (!api?.getCourseContentScan) {
+      return { hasLocal: false, weeks: [] };
+    }
+    return api.getCourseContentScan();
+  } catch {
+    return { hasLocal: false, weeks: [] };
+  }
 }
 
 function electronHasLocalCourseContent(): boolean {
-  if (!fs || !COURSE_CONTENT_PATH) return false;
-  try {
-    return fs.existsSync(COURSE_CONTENT_PATH) && fs.statSync(COURSE_CONTENT_PATH).isDirectory();
-  } catch {
-    return false;
-  }
+  return getScanFromPreload().hasLocal;
 }
 
 function electronGetAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
-  if (!electronHasLocalCourseContent()) return [];
-
-  try {
-    const entries = fs.readdirSync(COURSE_CONTENT_PATH, { withFileTypes: true });
-
-    const weeks = entries
-      .filter((entry: any) => entry.isDirectory() && /^week\d+$/i.test(entry.name))
-      .map((entry: any) => {
-        const weekNum = parseInt(entry.name.replace(/^week/i, ''), 10);
-        const weekPath = nodePath.join(COURSE_CONTENT_PATH, entry.name);
-
-        let days: number[] = [];
-        try {
-          const dayEntries = fs.readdirSync(weekPath, { withFileTypes: true });
-          days = dayEntries
-            .filter((d: any) => d.isDirectory() && /^day\d+$/i.test(d.name))
-            .map((d: any) => parseInt(d.name.replace(/^day/i, ''), 10))
-            .sort((a: number, b: number) => a - b);
-        } catch {
-          // ignore unreadable week folders
-        }
-
-        return { week: weekNum, days };
-      })
-      .filter((w: any) => w.days.length > 0)
-      .sort((a: any, b: any) => a.week - b.week);
-
-    return weeks;
-  } catch (error) {
-    console.error('Failed to scan course content directory:', error);
-    return [];
-  }
+  return getScanFromPreload().weeks;
 }
 
 /* ============================================================
@@ -111,11 +78,11 @@ function electronGetAvailableWeeksAndDays(): Array<{ week: number; days: number[
    ============================================================ */
 
 export function hasLocalCourseContent(): boolean {
-  return isElectronRuntime ? electronHasLocalCourseContent() : browserHasLocalCourseContent();
+  return usePreloadCourseScan ? electronHasLocalCourseContent() : browserHasLocalCourseContent();
 }
 
 export function getAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
-  return isElectronRuntime ? electronGetAvailableWeeksAndDays() : browserGetAvailableWeeksAndDays();
+  return usePreloadCourseScan ? electronGetAvailableWeeksAndDays() : browserGetAvailableWeeksAndDays();
 }
 
 export function getAvailableWeeks(): number[] {

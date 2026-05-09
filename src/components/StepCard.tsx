@@ -114,10 +114,11 @@ export const StepCard: React.FC<StepCardProps> = ({
 
     try {
       await window.electronAPI.executeCommand(step.command, workspacePath);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
       setCommandResult({
         output: liveOutput,
-        error: err?.message || 'Unknown error',
+        error: message,
         success: false,
       });
       setIsRunning(false);

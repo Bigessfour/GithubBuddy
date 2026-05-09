@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
 import { DaySelector } from './components/DaySelector';
-import { StepCard } from './components/StepCard';
-import { ProgressTracker } from './components/ProgressTracker';
 import { WorkspaceSelector } from './components/WorkspaceSelector';
 import { DayFocus } from './components/DayFocus';
+import { GuidancePanel } from './components/GuidancePanel';
 import { useDayGuidance } from './hooks/useDayGuidance';
 import { useDayFocus } from './hooks/useDayFocus';
-import type { DayGuidance } from './types';
 
 /**
  * Main Application Component - Platoon Companion
@@ -21,7 +19,7 @@ import type { DayGuidance } from './types';
  * Architectural decisions demonstrated:
  * - Lifting state up: selectedWeek, selectedDay, and completedSteps live here
  *   and are passed down to child components (classic React pattern)
- * - Two useEffect hooks for localStorage sync (load on day change, save on progress change)
+ * - Progress for the checklist is scoped per day via `GuidancePanel` + `key={week-day}` (no sync setState in effects)
  * - Conditional rendering based on whether guidance exists for the chosen day
  *
  * This component is intentionally kept relatively simple so students can read and understand
@@ -35,16 +33,13 @@ import type { DayGuidance } from './types';
 
 const DEFAULT_WEEK = 2;
 const DEFAULT_DAY = 4;
-const STORAGE_KEY = 'platoon-companion-progress';
 
 function App() {
+  console.log('[Renderer] App component mounted');
   // === State ===
   // The currently chosen week and day. Changing these triggers guidance lookup and progress restore.
   const [selectedWeek, setSelectedWeek] = useState(DEFAULT_WEEK);
   const [selectedDay, setSelectedDay] = useState(DEFAULT_DAY);
-
-  // Set of step IDs that the user has marked complete. Using a Set for O(1) lookup and easy toggle.
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
 
   /**
    * Workspace path selected by the user (v0.2 feature).
@@ -63,57 +58,10 @@ function App() {
   // v0.6: Dynamic full content from local upstream repo clone
   const dayFocus = useDayFocus(selectedWeek, selectedDay);
 
-  // === Effects ===
-
-  /**
-   * Effect 1: Restore progress when the user switches to a different day.
-   * Runs whenever selectedWeek or selectedDay changes.
-   * If we have previously saved progress for that exact day, we hydrate the Set.
-   * Otherwise we start fresh (empty Set).
-   */
-  useEffect(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}-${selectedWeek}-${selectedDay}`);
-    if (saved) {
-      setCompletedSteps(new Set(JSON.parse(saved)));
-    } else {
-      setCompletedSteps(new Set());
-    }
-  }, [selectedWeek, selectedDay]);
-
-  /**
-   * Effect 2: Persist progress whenever the completedSteps Set changes (or day changes).
-   * We only save when guidance exists to avoid writing empty state for non-existent days.
-   * We convert the Set to an Array because JSON.stringify does not support Sets natively.
-   */
-  useEffect(() => {
-    if (guidance) {
-      localStorage.setItem(
-        `${STORAGE_KEY}-${selectedWeek}-${selectedDay}`,
-        JSON.stringify(Array.from(completedSteps))
-      );
-    }
-  }, [completedSteps, selectedWeek, selectedDay, guidance]);
-
-  // === Event Handlers ===
-
   /** Called by DaySelector when either dropdown changes. Updates both week and day atomically. */
   const handleDayChange = (week: number, day: number) => {
     setSelectedWeek(week);
     setSelectedDay(day);
-  };
-
-  /**
-   * Toggles a single step's completion status.
-   * We create a new Set (immutability) so React detects the change and re-renders.
-   */
-  const toggleComplete = (stepId: string) => {
-    const newCompleted = new Set(completedSteps);
-    if (newCompleted.has(stepId)) {
-      newCompleted.delete(stepId);
-    } else {
-      newCompleted.add(stepId);
-    }
-    setCompletedSteps(newCompleted);
   };
 
   // === Derived UI values ===
@@ -160,50 +108,12 @@ function App() {
         {dayFocus ? (
           <DayFocus focus={dayFocus} />
         ) : guidance ? (
-          <>
-            <div className="guidance-header">
-              <h2>{guidance.title}</h2>
-              <p className="summary">{guidance.summary}</p>
-            </div>
-
-            {workspacePath && (
-              <div className="command-preview-banner">
-                Workspace selected: <code>{workspacePath}</code>. 
-                In the next version you will be able to preview and safely run commands here.
-              </div>
-            )}
-
-            <div className="layout-grid">
-              <div className="checklist">
-                <h3>Step-by-step checklist</h3>
-                {guidance.steps.map((step) => (
-                  <StepCard
-                    key={step.id}
-                    step={step}
-                    isCompleted={completedSteps.has(step.id)}
-                    onToggleComplete={toggleComplete}
-                    workspacePath={workspacePath}
-                  />
-                ))}
-              </div>
-
-              <aside className="sidebar">
-                <ProgressTracker
-                  steps={guidance.steps}
-                  completedSteps={completedSteps}
-                />
-
-                <div className="best-practices">
-                  <h3>GitHub Best Practices</h3>
-                  <ul>
-                    {guidance.bestPractices.map((practice, index) => (
-                      <li key={index}>{practice}</li>
-                    ))}
-                  </ul>
-                </div>
-              </aside>
-            </div>
-          </>
+          <GuidancePanel
+            key={`${selectedWeek}-${selectedDay}`}
+            progressScope={`${selectedWeek}-${selectedDay}`}
+            guidance={guidance}
+            workspacePath={workspacePath}
+          />
         ) : (
           <div className="no-guidance">
             <p>No guidance available for Week {selectedWeek} Day {selectedDay} yet.</p>

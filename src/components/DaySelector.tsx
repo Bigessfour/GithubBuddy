@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { getAvailableWeeksAndDays, hasLocalCourseContent } from '../utils/courseScanner';
+
+const DEFAULT_WEEKS = Array.from({ length: 12 }, (_, i) => i + 1);
+const DEFAULT_DAYS = Array.from({ length: 5 }, (_, i) => i + 1);
 
 /**
  * DaySelector Component (Dynamic Version)
@@ -24,41 +27,45 @@ interface DaySelectorProps {
   onChange: (week: number, day: number) => void;
 }
 
-export const DaySelector: React.FC<DaySelectorProps> = ({
-  selectedWeek,
-  selectedDay,
-  onChange,
-}) => {
-  const [availableWeeks, setAvailableWeeks] = useState<number[]>(Array.from({ length: 12 }, (_, i) => i + 1));
-  const [availableDays, setAvailableDays] = useState<number[]>(Array.from({ length: 5 }, (_, i) => i + 1));
-  const [usingLocalContent, setUsingLocalContent] = useState(false);
+export function DaySelector({ selectedWeek, selectedDay, onChange }: DaySelectorProps) {
+  const [scanVersion, setScanVersion] = useState(0);
+  const [fetchStatus, setFetchStatus] = useState<string>('');
+  const [isFetching, setIsFetching] = useState(false);
 
-  useEffect(() => {
-    // Check if the student has placed a local copy of the course repo
-    if (hasLocalCourseContent()) {
-      const weeksData = getAvailableWeeksAndDays();
-      if (weeksData.length > 0) {
-        const weeks = weeksData.map((w) => w.week);
-        setAvailableWeeks(weeks);
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
-        // Set days for the currently selected week (or first available week)
-        const currentWeekData = weeksData.find((w) => w.week === selectedWeek) || weeksData[0];
-        if (currentWeekData) {
-          setAvailableDays(currentWeekData.days);
-        }
-        setUsingLocalContent(true);
-      }
+  const { availableWeeks, availableDays, usingLocalContent } = useMemo(() => {
+    // scanVersion bumps after "Fetch upstream" so we re-scan disk without effect setState.
+    void scanVersion;
+    if (!hasLocalCourseContent()) {
+      return {
+        usingLocalContent: false,
+        availableWeeks: DEFAULT_WEEKS,
+        availableDays: DEFAULT_DAYS,
+      };
     }
-  }, [selectedWeek]);
+    const weeksData = getAvailableWeeksAndDays();
+    if (weeksData.length === 0) {
+      return {
+        usingLocalContent: false,
+        availableWeeks: DEFAULT_WEEKS,
+        availableDays: DEFAULT_DAYS,
+      };
+    }
+    const weeks = weeksData.map((w) => w.week);
+    const currentWeekData = weeksData.find((w) => w.week === selectedWeek) || weeksData[0];
+    return {
+      usingLocalContent: true,
+      availableWeeks: weeks,
+      availableDays: currentWeekData ? currentWeekData.days : DEFAULT_DAYS,
+    };
+  }, [selectedWeek, scanVersion]);
 
-  // When week changes, update available days if using local content
   const handleWeekChange = (newWeek: number) => {
     if (usingLocalContent) {
       const weeksData = getAvailableWeeksAndDays();
       const weekData = weeksData.find((w) => w.week === newWeek);
       if (weekData) {
-        setAvailableDays(weekData.days);
-        // Pick the first available day for that week
         onChange(newWeek, weekData.days[0]);
         return;
       }
@@ -68,6 +75,40 @@ export const DaySelector: React.FC<DaySelectorProps> = ({
 
   const handleDayChange = (newDay: number) => {
     onChange(selectedWeek, newDay);
+  };
+
+  const handleFetchUpstream = async () => {
+    if (!isElectron || !window.electronAPI) return;
+    const api = window.electronAPI;
+    setIsFetching(true);
+    setFetchStatus('Starting fetch...');
+
+    const customUrl = window.prompt('Enter upstream repo URL (or leave blank for default):', '');
+    const urlToUse = customUrl?.trim() || undefined;
+
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = api.onUpstreamStatus?.((data: { message: string }) => {
+        if (data.message) setFetchStatus(data.message);
+      });
+
+      const result = await api.fetchUpstreamRepo(urlToUse);
+
+      if (result.success) {
+        setScanVersion((v) => v + 1);
+        setFetchStatus(result.message || 'Course content updated.');
+        setIsFetching(false);
+      } else {
+        setFetchStatus(`Error: ${result.error ?? 'Unknown error'}`);
+        setIsFetching(false);
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setFetchStatus(`Failed: ${message}`);
+      setIsFetching(false);
+    } finally {
+      unsubscribe?.();
+    }
   };
 
   return (
@@ -109,6 +150,34 @@ export const DaySelector: React.FC<DaySelectorProps> = ({
           Using local course content from <code>data/course-content/aico-echo</code> — full day focus loaded
         </p>
       )}
+
+      {isElectron && (
+        <div style={{ marginTop: '12px' }}>
+          <button
+            onClick={handleFetchUpstream}
+            disabled={isFetching}
+            style={{
+              padding: '8px 16px',
+              background: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: isFetching ? 'not-allowed' : 'pointer',
+              opacity: isFetching ? 0.7 : 1,
+            }}
+          >
+            {isFetching ? 'Fetching...' : 'Fetch Upstream Repo Data'}
+          </button>
+          {fetchStatus && (
+            <p style={{ marginTop: '8px', fontSize: '0.875rem', color: '#374151' }}>
+              {fetchStatus}
+            </p>
+          )}
+          <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '4px' }}>
+            Clones or updates the private course repo (requires GitHub auth)
+          </p>
+        </div>
+      )}
     </div>
   );
-};
+}

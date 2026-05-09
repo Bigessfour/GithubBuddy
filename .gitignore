@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 
 # Private course content (read-only reference)
-data/
+/data/
 dist-electron/
+out/

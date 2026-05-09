@@ -242,13 +242,17 @@ This command:
 | `npm run dev`             | Web-only development server                       | Quick UI work in browser        |
 | `npm run electron:dev`    | Full desktop experience with hot reload           | Daily development of the app    |
 | `npm run build`           | Production build of the web app                   | Before packaging for distribution |
-| `npm run electron:build`  | Build the desktop app for Windows + macOS         | Creating distributable versions |
+| `npm run electron:build`  | Build main/preload/renderer into `dist-electron/` + `out/renderer` | Before testing production UI locally |
+| `npm run electron:preview`| Run Electron against the **built** UI (`cross-env NODE_ENV=production electron .`) | After `electron:build` — avoids white screen from loading a dead dev server |
+| `npm run electron:clean`  | Deletes `out/` and `dist-electron/`               | When `index.html` or build output seems stale; then rebuild |
+| `npm run lint`            | ESLint across the repo                            | CI and before PRs |
 | `npm test`                | Run the automated test suite                      | Before opening a Pull Request   |
 
 ### Cross-Platform Notes
 
 - All commands above work on **Windows**, **macOS**, and **Linux**.
-- We deliberately use cross-platform tools (`electron-vite`, `concurrently`, `wait-on`) so students on any operating system have the same experience.
+- `electron:preview` uses **`cross-env`** so `NODE_ENV=production` is set correctly on Windows too.
+- We deliberately use cross-platform tools (`electron-vite`, `cross-env`) so students on any operating system have the same experience.
 - No platform-specific code or setup is required for v0.3.
 
 **Official documentation:**
@@ -557,6 +561,99 @@ This project is intentionally simple and well-documented so students can:
 - Learn professional GitHub workflows by using the app *and* by reading its code
 
 Feel free to ask questions about any part of the stack — that's the whole point of building it together.
+
+---
+
+## Electron Desktop App – Troubleshooting & AI-Assisted Fixes
+
+During the implementation of the desktop (Electron) version and the "Fetch Upstream Repo Data" button, we encountered several non-obvious issues that are common when combining Vite + React + Electron. The AI coding assistant helped diagnose each one in real time using the running terminal output, DevTools console, and screenshots.
+
+### Problem 1: Preload Script Fails with "Cannot use import statement outside a module"
+**Symptom**  
+```
+Unable to load preload script: .../preload.mjs
+SyntaxError: Cannot use import statement outside a module
+```
+
+**Root Cause**  
+`sandbox: true` (the strongest isolation setting) is incompatible with ESM preload scripts produced by `electron-vite`.
+
+**Fix**  
+Changed `sandbox: true` → `sandbox: false` in `createWindow()` while keeping `contextIsolation: true` and `nodeIntegration: false`. This is the documented secure configuration when using ESM preload.
+
+### Problem 2: Persistent "Insecure Content-Security-Policy" Warning
+**Symptom**  
+```
+Electron Security Warning (Insecure Content-Security-Policy)
+This renderer process has either no Content Security Policy set
+or a policy with "unsafe-eval" enabled.
+```
+
+**Root Cause**  
+A `<meta http-equiv="Content-Security-Policy">` tag in `index.html` is often ignored or overridden when Electron loads the page via `loadURL`.
+
+**Fix**  
+Injected the CSP header programmatically from the main process using:
+```ts
+mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+  callback({
+    responseHeaders: {
+      ...details.responseHeaders,
+      'Content-Security-Policy': [
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173 ws://localhost:5173;",
+      ],
+    },
+  });
+});
+```
+This is the officially recommended approach in the Electron security documentation.
+
+### Problem 3: Blank White Window – React App Never Renders
+**Symptom**  
+- Terminal shows `[Main] did-finish-load`
+- DevTools shows only the preload log and CSP warning
+- No React components, no `[Renderer]` logs, `#root` remains empty
+
+**Root Cause**  
+Multiple interacting issues:
+- **electron-vite** defaults the renderer Vite `root` to `./src/renderer`. This project keeps `index.html` at the **repository root**, so the dev server was serving the wrong tree — diagnostics showed `React entry script tag found in DOM: false` because the loaded HTML was not the real app shell.
+- The dev server can still be racing Electron on first connect.
+- Missing or misconfigured tooling made renderer errors hard to see.
+
+**Fixes Applied**
+- Set `renderer.root` to the project root and `rollupOptions.input` to an absolute `index.html` in `electron.vite.config.ts`; aligned `server.port` / `strictPort` with `vite.config.ts`.
+- Kept `vite-plugin-electron-renderer` (`renderer()` plugin) for Electron-friendly renderer bundling.
+- Main process follows the Electron `app` API: `app.whenReady()` for startup, **dev server only when** `NODE_ENV === 'development'` or `VITE_DEV_SERVER_URL` is set (unpackaged `electron .` after build uses `loadFile`, not localhost), CSP on `session.defaultSession`, and `resolveProductionIndexHtml()` that resolves `../../out/renderer/index.html` from `dist-electron/main` (see Problem 5).
+- Dev retries: if the DOM still lacks the React entry script or `did-fail-load` fires, reload the dev URL up to three times (never `loadFile` of `index.html` in dev — `file://` cannot resolve `/src/main.tsx`).
+- Startup logging, `console-message` forwarding, `did-fail-load`, and `render-process-gone` handlers for visibility.
+
+### Problem 4: VITE_DEV_SERVER_URL Is Undefined
+**Symptom**  
+```
+[Main] VITE_DEV_SERVER_URL: undefined
+[Main] VITE_DEV_SERVER_URL not set, falling back to http://localhost:5173
+```
+
+**Explanation**  
+`electron-vite` only injects this environment variable under certain conditions. The fallback to a hardcoded port works, but a small startup delay is still required.
+
+### Problem 5: Production / Preview Window Is Blank (White Screen)
+**Symptom**  
+- After `npm run electron:build`, opening the app shows an empty white window (no header, no React UI).
+
+**Root causes we fixed**  
+1. **Wrong path to `index.html`:** The main bundle lives at `dist-electron/main/main.js`. A relative path `../out/renderer/index.html` points under `dist-electron/out/...`, which does **not** exist. The electron-vite renderer output is at the **project root** `out/renderer/`, so the correct relative path is **`../../out/renderer/index.html`**.
+2. **Treating every unpackaged run as “dev”:** Using `isDev = !app.isPackaged` made a post-build `electron .` try to load `http://localhost:5173` even when the Vite dev server was off. Production-style runs must use `loadFile` with the built `out/renderer/index.html`.
+
+**Fixes / workflow**  
+- `resolveProductionIndexHtml()` tries `../../out/renderer/index.html` first, then other candidates.  
+- `shouldLoadDevServer()` is `true` only when unpackaged **and** (`NODE_ENV === 'development'` or `VITE_DEV_SERVER_URL` is set).  
+- Run a local production smoke test after build: `npm run electron:preview` (sets `NODE_ENV=production` before `electron .`). Packaged apps use `app.isPackaged === true` and always load from disk.
+
+### Outcome
+After applying the fixes above, the desktop app successfully renders the full React UI, including the new **"Fetch Upstream Repo Data"** button (visible only when `window.electronAPI` exists). The button triggers a secure `git clone` / `git pull` of the private upstream course repository and refreshes the dynamic week/day selector.
+
+All changes were made iteratively with the AI assistant reviewing terminal output, DevTools console, and screenshots in real time — exactly the workflow this project encourages students to adopt.
 
 ---
 

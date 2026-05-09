@@ -12,7 +12,9 @@
  * when using `electron-vite` with TypeScript.
  */
 
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
+import { scanCourseContentFromDisk } from './courseContentScan';
+import { loadDayFocusFromDisk } from './dayFocusLoader';
 
 /**
  * This is the object that will be available in the renderer as:
@@ -38,7 +40,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * Listen for live stdout/stderr chunks.
    */
   onCommandOutput: (callback: (data: { type: 'stdout' | 'stderr'; data: string }) => void) => {
-    const listener = (_event: any, data: any) => callback(data);
+    const listener = (_event: IpcRendererEvent, data: { type: 'stdout' | 'stderr'; data: string }) =>
+      callback(data);
     ipcRenderer.on('command-output', listener);
     return () => ipcRenderer.removeListener('command-output', listener);
   },
@@ -46,11 +49,46 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /**
    * Listen for final command completion.
    */
-  onCommandComplete: (callback: (result: any) => void) => {
-    const listener = (_event: any, result: any) => callback(result);
+  onCommandComplete: (
+    callback: (result: { success: boolean; output: string; error?: string; exitCode?: number }) => void,
+  ) => {
+    const listener = (
+      _event: IpcRendererEvent,
+      result: { success: boolean; output: string; error?: string; exitCode?: number },
+    ) => callback(result);
     ipcRenderer.on('command-complete', listener);
     return () => ipcRenderer.removeListener('command-complete', listener);
   },
+
+  /**
+   * Fetch (clone or pull) the upstream course repo.
+   * Returns { success, message?, error? }
+   */
+  fetchUpstreamRepo: (repoUrl?: string) =>
+    ipcRenderer.invoke('fetch-upstream-repo', repoUrl),
+
+  /**
+   * Listen for live status updates during fetch (e.g. "Cloning...").
+   */
+  onUpstreamStatus: (callback: (data: { message: string }) => void) => {
+    const listener = (_event: IpcRendererEvent, data: { message: string }) => callback(data);
+    ipcRenderer.on('upstream-status', listener);
+    return () => ipcRenderer.removeListener('upstream-status', listener);
+  },
+
+  /**
+   * Synchronous scan of data/course-content/aico-echo (Node fs runs in preload, not renderer).
+   * Renderer must not import fs — Vite bundles ESM where require/import of fs breaks.
+   */
+  getCourseContentScan: () => scanCourseContentFromDisk(),
+
+  /** Full markdown files for a week/day folder (sync fs in preload). */
+  getDayFocusContent: (week: number, day: number) => loadDayFocusFromDisk(week, day),
 });
 
-console.log('[Preload] v0.4 Preload script loaded – electronAPI exposed safely');
+console.log('[Preload] v0.6 Preload script loaded – electronAPI exposed safely');
+console.log('[Preload] process.versions:', {
+  node: process.versions.node,
+  electron: process.versions.electron,
+  chrome: process.versions.chrome,
+});
