@@ -1,31 +1,18 @@
 /**
- * Electron Preload Script – v0.4 Safe Command Execution
+ * Electron Preload Script – v0.5 (Aligned with Official Recommendations)
+ *
+ * Official Documentation:
+ * - https://www.electronjs.org/docs/latest/tutorial/context-isolation
+ * - https://www.electronjs.org/docs/latest/api/context-bridge
  *
  * This file is the ONLY place where we are allowed to use Node.js / Electron APIs
  * while keeping `contextIsolation: true` (the recommended security setting).
  *
- * What we do here:
- * 1. Use `contextBridge` to safely expose a limited API to the React renderer.
- * 2. Use `ipcRenderer.invoke` to call functions in the main process.
- *
- * Why this architecture?
- * - The renderer (React) cannot directly access `child_process` or `dialog`.
- * - The main process has full system access.
- * - The preload script acts as a controlled gateway.
- *
- * Security best practices we follow:
- * - We never expose raw `ipcRenderer` or `child_process` to the renderer.
- * - We only expose two specific, well-named functions.
- * - All actual dangerous work (executing commands) happens in the main process.
- *
- * Official references:
- * - Context Isolation: https://www.electronjs.org/docs/latest/tutorial/context-isolation
- * - Context Bridge: https://www.electronjs.org/docs/latest/api/context-bridge
- * - IPC (Renderer → Main): https://www.electronjs.org/docs/latest/tutorial/ipc#renderer-to-main
+ * We now use the modern ESM import style, which is the preferred pattern
+ * when using `electron-vite` with TypeScript.
  */
 
-// We must use the CommonJS-style require here because preload runs before ESM is fully set up in some Electron versions
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from 'electron';
 
 /**
  * This is the object that will be available in the renderer as:

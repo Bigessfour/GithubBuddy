@@ -27,6 +27,21 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { exec } from 'child_process';
 
+/**
+ * Creates the main application window following official Electron security recommendations.
+ *
+ * Official Documentation References:
+ * - https://www.electronjs.org/docs/latest/tutorial/security#3-enable-sandbox-for-all-renderers
+ * - https://www.electronjs.org/docs/latest/api/web-contents#webpreferences
+ * - https://electron-vite.org/guide/ (for VITE_DEV_SERVER_URL pattern)
+ *
+ * Security settings applied:
+ * - nodeIntegration: false          → Renderer cannot access Node.js directly
+ * - contextIsolation: true          → Renderer and preload run in separate JavaScript contexts
+ * - sandbox: true                   → Recommended for all renderers (strongest isolation)
+ * - webSecurity: true               → Enforces same-origin policy and CSP
+ * - preload: <path>                 → Only safe bridge between renderer and main process
+ */
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -34,18 +49,32 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // We must point to the preload script so our safe API is available.
-      // electron-vite outputs preload as .mjs during development.
+      sandbox: true,                    // Official recommendation for all renderers
+      webSecurity: true,                // Enforces same-origin policy
       preload: path.join(__dirname, '../preload/preload.mjs'),
     },
   });
 
+  /**
+   * Development vs Production Loading
+   *
+   * electron-vite sets the environment variable `VITE_DEV_SERVER_URL` during development.
+   * This is the officially recommended way to load the renderer during development.
+   *
+   * Reference: https://electron-vite.org/guide/
+   */
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-  if (isDev) {
+  if (isDev && process.env.VITE_DEV_SERVER_URL) {
+    // Preferred method: use the URL provided by electron-vite
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    mainWindow.webContents.openDevTools();
+  } else if (isDev) {
+    // Fallback (for manual testing)
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
+    // Production build
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 }

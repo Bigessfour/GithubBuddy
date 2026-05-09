@@ -1,36 +1,69 @@
 /**
- * Course Content Scanner
+ * Course Content Scanner – Safe for Both Browser and Desktop
  *
- * This utility scans the local clone of the Code Platoon course repository
- * located at `data/course-content/aico-echo`.
+ * PURPOSE:
+ * This module detects whether the user has a local copy of the private
+ * Code Platoon course repository (`aico-echo`) and exposes the available
+ * weeks/days so the UI can populate the selector dynamically.
  *
- * It discovers available weeks and days by reading the folder structure.
- * This makes the day selector dynamic and keeps the app in sync with the actual course materials.
+ * CRITICAL ARCHITECTURE RULE (from official docs):
  *
- * Design decisions:
- * - Read-only: We never write or modify any files in the course repo.
- * - Graceful fallback: If the folder doesn't exist, we fall back to hardcoded data.
- * - Cross-platform: Uses Node's `fs` and `path` modules which work on Windows, macOS, and Linux.
+ * Vite Documentation:
+ *   - "Node.js built-in modules (fs, path, etc.) cannot be imported
+ *     directly in client-side (browser) code."
+ *   - Source: https://vitejs.dev/guide/ssr.html#built-in-node-modules
  *
- * Learning references:
- * - Node.js fs module: https://nodejs.org/api/fs.html
- * - Node.js path module: https://nodejs.org/api/path.html
- * - Electron + filesystem access: https://www.electronjs.org/docs/latest/tutorial/sandbox#preload-scripts
+ * Electron Documentation:
+ *   - "Renderer processes run in a Chromium sandbox.
+ *     Node APIs must only be used in the main process or preload scripts."
+ *   - Source: https://www.electronjs.org/docs/latest/tutorial/context-isolation
  *
- * Security note:
- * - We only read directories. No file content is executed.
- * - The path is relative to the project root, so it stays inside the user's controlled environment.
+ * IMPLEMENTATION STRATEGY:
+ * - In **browser mode** (`npm run dev`): This file must never touch Node APIs.
+ *   All functions return empty results → the app falls back to hardcoded data.
+ * - In **desktop mode** (Electron): We can safely use `fs`/`path` because the
+ *   code only runs after going through the preload bridge (future improvement).
+ *
+ * For v0.4 we keep it simple: the dynamic scanner is **Electron-only**.
+ * The browser version always uses the hardcoded Week 2 Day 4 guidance.
  */
 
-import fs from 'fs';
-import path from 'path';
+import type { DayGuidance } from '../types';
 
-const COURSE_CONTENT_PATH = path.join(process.cwd(), 'data', 'course-content', 'aico-echo');
+// Runtime environment detection
+const isElectronRuntime = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
-/**
- * Checks whether the local course content directory exists.
- */
-export function hasLocalCourseContent(): boolean {
+/* ============================================================
+   BROWSER-SAFE (NO-OP) IMPLEMENTATIONS
+   These are used when running `npm run dev`
+   ============================================================ */
+
+function browserHasLocalCourseContent(): boolean {
+  return false;
+}
+
+function browserGetAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
+  return [];
+}
+
+/* ============================================================
+   ELECTRON IMPLEMENTATIONS (only loaded when safe)
+   ============================================================ */
+
+let fs: any;
+let nodePath: any;
+let COURSE_CONTENT_PATH = '';
+
+if (isElectronRuntime) {
+  // We are inside Electron → it is safe to require Node modules
+  // This block only executes in the desktop app.
+  fs = require('fs');
+  nodePath = require('path');
+  COURSE_CONTENT_PATH = nodePath.join(process.cwd(), 'data', 'course-content', 'aico-echo');
+}
+
+function electronHasLocalCourseContent(): boolean {
+  if (!fs || !COURSE_CONTENT_PATH) return false;
   try {
     return fs.existsSync(COURSE_CONTENT_PATH) && fs.statSync(COURSE_CONTENT_PATH).isDirectory();
   } catch {
@@ -38,49 +71,33 @@ export function hasLocalCourseContent(): boolean {
   }
 }
 
-/**
- * Discovers all available weeks and days from the local course clone.
- *
- * Expected structure:
- *   aico-echo/
- *     week1/
- *       day1/
- *       day2/
- *     week2/
- *       ...
- *
- * Returns an array of objects like:
- *   [{ week: 1, days: [1,2,3,4,5] }, { week: 2, days: [1,2,...] }, ...]
- */
-export function getAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
-  if (!hasLocalCourseContent()) {
-    return [];
-  }
+function electronGetAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
+  if (!electronHasLocalCourseContent()) return [];
 
   try {
     const entries = fs.readdirSync(COURSE_CONTENT_PATH, { withFileTypes: true });
 
     const weeks = entries
-      .filter((entry) => entry.isDirectory() && /^week\d+$/i.test(entry.name))
-      .map((entry) => {
+      .filter((entry: any) => entry.isDirectory() && /^week\d+$/i.test(entry.name))
+      .map((entry: any) => {
         const weekNum = parseInt(entry.name.replace(/^week/i, ''), 10);
-        const weekPath = path.join(COURSE_CONTENT_PATH, entry.name);
+        const weekPath = nodePath.join(COURSE_CONTENT_PATH, entry.name);
 
         let days: number[] = [];
         try {
           const dayEntries = fs.readdirSync(weekPath, { withFileTypes: true });
           days = dayEntries
-            .filter((d) => d.isDirectory() && /^day\d+$/i.test(d.name))
-            .map((d) => parseInt(d.name.replace(/^day/i, ''), 10))
-            .sort((a, b) => a - b);
+            .filter((d: any) => d.isDirectory() && /^day\d+$/i.test(d.name))
+            .map((d: any) => parseInt(d.name.replace(/^day/i, ''), 10))
+            .sort((a: number, b: number) => a - b);
         } catch {
-          // Ignore weeks that can't be read
+          // ignore unreadable week folders
         }
 
         return { week: weekNum, days };
       })
-      .filter((w) => w.days.length > 0)
-      .sort((a, b) => a.week - b.week);
+      .filter((w: any) => w.days.length > 0)
+      .sort((a: any, b: any) => a.week - b.week);
 
     return weeks;
   } catch (error) {
@@ -89,18 +106,24 @@ export function getAvailableWeeksAndDays(): Array<{ week: number; days: number[]
   }
 }
 
-/**
- * Returns a list of week numbers that exist locally.
- */
-export function getAvailableWeeks(): number[] {
-  return getAvailableWeeksAndDays().map((w) => w.week);
+/* ============================================================
+   PUBLIC API (Environment-aware)
+   ============================================================ */
+
+export function hasLocalCourseContent(): boolean {
+  return isElectronRuntime ? electronHasLocalCourseContent() : browserHasLocalCourseContent();
 }
 
-/**
- * Returns the list of days available for a specific week.
- */
+export function getAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
+  return isElectronRuntime ? electronGetAvailableWeeksAndDays() : browserGetAvailableWeeksAndDays();
+}
+
+export function getAvailableWeeks(): number[] {
+  return getAvailableWeeksAndDays().map(w => w.week);
+}
+
 export function getAvailableDaysForWeek(week: number): number[] {
   const weeks = getAvailableWeeksAndDays();
-  const found = weeks.find((w) => w.week === week);
+  const found = weeks.find(w => w.week === week);
   return found ? found.days : [];
 }
