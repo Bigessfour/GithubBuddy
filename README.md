@@ -290,16 +290,19 @@ We have now implemented the ability to actually **run** the commands shown in th
 
 **How it works (the documented way):**
 
-1. **Preload Script** (`electron/preload.ts`)
-   - Uses `contextBridge` to safely expose two methods to the React app:
-     - `selectWorkspace()` – opens a native folder picker
-     - `executeCommand(command, cwd)` – runs a shell command inside the chosen folder
-   - This is the only secure way to give the renderer limited access to system functionality.
+We follow the official `electron-vite` + Electron security model:
 
-2. **Main Process Handlers** (`electron/main.ts`)
-   - `'select-workspace'` → calls `dialog.showOpenDialog()`
-   - `'execute-command'` → uses Node’s `child_process.exec()` with an explicit `cwd` and timeout
-   - All dangerous work happens in the main process.
+1. **Preload Script** (`electron/preload.ts`)
+   - Uses `contextBridge` to safely expose two methods to the React app.
+   - Reference: https://www.electronjs.org/docs/latest/tutorial/context-isolation
+
+2. **Main Process** (`electron/main.ts`)
+   - Handles IPC and runs commands using Node’s `child_process.exec`.
+   - Reference: https://www.electronjs.org/docs/latest/api/ipc-main
+
+3. **Configuration** (`electron.vite.config.ts`)
+   - Properly configured renderer with `rollupOptions.input: 'index.html'` because our project has the HTML file at the root (standard Vite layout).
+   - Reference: https://electron-vite.org/config/
 
 3. **UI Layer**
    - `WorkspaceSelector` now uses the real native dialog.

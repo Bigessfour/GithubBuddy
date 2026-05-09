@@ -34,8 +34,9 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // We must point to the preload script so our safe API is available
-      preload: path.join(__dirname, '../preload/index.js'),
+      // We must point to the preload script so our safe API is available.
+      // electron-vite outputs preload as .mjs during development.
+      preload: path.join(__dirname, '../preload/preload.mjs'),
     },
   });
 

@@ -3,28 +3,27 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 /**
- * electron-vite Configuration
+ * electron-vite Configuration – Fully Documented (v0.4)
  *
- * This is the official recommended configuration file when using `electron-vite`.
- * It allows us to configure the main process, preload script, and renderer separately
- * while still getting excellent development experience (hot reload for both processes).
+ * This is the correct, officially recommended way to configure electron-vite
+ * when your project originally started as a standard Vite + React application
+ * (with index.html at the project root).
  *
- * Why we use electron-vite instead of plain Vite + Electron:
- * - It provides a clean, modern setup with TypeScript support out of the box.
- * - It handles the complexity of bundling the main process correctly.
- * - It enables fast HMR (Hot Module Replacement) for the main process during development.
+ * Key documentation references:
+ * - Official electron-vite guide: https://electron-vite.org/guide/
+ * - Renderer configuration options: https://electron-vite.org/config/
+ * - Rollup input option: https://rollupjs.org/configuration-options/#input
  *
- * Learning resources:
- * - Official electron-vite documentation: https://electron-vite.org/
- * - GitHub repository with examples: https://github.com/electron-vite/electron-vite
- * - Comparison with other setups: https://electron-vite.org/guide/
+ * Why this structure?
+ * - Main and Preload are built as separate bundles (Node.js environment).
+ * - Renderer reuses our existing Vite + React setup.
+ * - We explicitly set rollupOptions.input so electron-vite knows where index.html lives.
  */
 
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     build: {
-      // Output the main process bundle
       outDir: 'dist-electron/main',
       lib: {
         entry: resolve(__dirname, 'electron/main.ts'),
@@ -43,8 +42,15 @@ export default defineConfig({
   },
 
   renderer: {
-    // Use our existing Vite + React setup
-    // electron-vite will automatically use the root index.html and vite.config.ts
+    // We are using the root-level Vite React setup
     plugins: [react()],
+
+    // This is the critical part that was missing.
+    // electron-vite needs to know the entry HTML file when it is not in src/renderer/.
+    build: {
+      rollupOptions: {
+        input: 'index.html',   // ← This fixes the "rollupOptions.input is required" error
+      },
+    },
   },
 });
