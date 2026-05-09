@@ -263,6 +263,37 @@ All new files contain extensive educational comments with direct links to the of
 
 This puts us on track to deliver a polished desktop experience while teaching students the correct, secure way to build cross-platform desktop apps.
 
+### Cross-Platform Support (Windows & macOS)
+
+The Platoon Companion desktop app is designed to run on both **Windows** and **macOS** (and Linux) using the same codebase.
+
+**Why this works (the documented way):**
+
+- Electron abstracts the differences between operating systems.
+- The renderer process (our React app) runs inside Chromium on every platform.
+- We use cross-platform Node.js tools (`concurrently`, `wait-on`, `electron-vite`) for the development scripts.
+- No platform-specific code paths are needed for the core functionality.
+
+**How to run on Windows:**
+
+Students on Windows use the exact same commands:
+
+```bash
+cd platoon-companion
+npm install
+npm run electron:dev
+```
+
+The app will open a native Windows window with the same UI and functionality.
+
+**Official documentation for cross-platform Electron development:**
+
+- [Electron Supported Platforms](https://www.electronjs.org/docs/latest/tutorial/supported-platforms)
+- [Writing Cross-Platform Code](https://www.electronjs.org/docs/latest/tutorial/using-native-node-modules#writing-cross-platform-code)
+- [electron-vite Cross-Platform Guide](https://electron-vite.org/guide/)
+
+We have deliberately avoided any macOS-only or Windows-only APIs in v0.3 so the learning experience is identical regardless of the student's operating system.
+
 ---
 
 ## Proof of Correctness – Automated Tests

@@ -43,16 +43,8 @@ export default defineConfig({
   },
 
   renderer: {
-    // This is our existing React app
-    root: '.',
+    // Use our existing Vite + React setup
+    // electron-vite will automatically use the root index.html and vite.config.ts
     plugins: [react()],
-    build: {
-      outDir: 'dist',
-    },
-    resolve: {
-      alias: {
-        '@': resolve(__dirname, 'src'),
-      },
-    },
   },
 });
