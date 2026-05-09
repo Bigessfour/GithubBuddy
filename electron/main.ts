@@ -35,7 +35,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       // We must point to the preload script so our safe API is available
-      preload: path.join(__dirname, '../preload/preload.mjs'),
+      preload: path.join(__dirname, '../preload/index.js'),
     },
   });
 

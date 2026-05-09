@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:dev": "electron-vite dev",
+    "electron:build": "electron-vite build"
   },
   "dependencies": {
     "react": "^19.2.5",
