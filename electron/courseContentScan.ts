@@ -8,15 +8,22 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { getAppProjectRoot } from "./projectRoot";
+import { reportToMainLog } from "./reportToMainLog";
 
 export type WeekDayInfo = { week: number; days: number[] };
+
+/** Throttle identical warnings when the renderer re-scans frequently (dev). */
+const lastEmptyLayoutLogAt = new Map<string, number>();
+const EMPTY_LAYOUT_LOG_COOLDOWN_MS =
+  process.env.VITEST === "true" ? 0 : 15_000;
 
 export function scanCourseContentFromDisk(): {
   hasLocal: boolean;
   weeks: WeekDayInfo[];
 } {
   const coursePath = path.join(
-    process.cwd(),
+    getAppProjectRoot(),
     "data",
     "course-content",
     "aico-echo",
@@ -59,24 +66,34 @@ export function scanCourseContentFromDisk(): {
       .filter((w) => w.days.length > 0)
       .sort((a, b) => a.week - b.week);
 
+    if (weeks.length === 0) {
+      const now = Date.now();
+      const prev = lastEmptyLayoutLogAt.get(coursePath) ?? 0;
+      if (now - prev >= EMPTY_LAYOUT_LOG_COOLDOWN_MS) {
+        lastEmptyLayoutLogAt.set(coursePath, now);
+        reportToMainLog(
+          "warn",
+          "courseContentScan",
+          "Course folder exists but no week*/day* content was found",
+          { coursePath },
+        );
+      }
+    }
+
     return { hasLocal: true, weeks };
   } catch (error) {
     console.error(
       "[courseContentScan] Failed to scan course content directory:",
       error,
     );
-    void import("./reportToMainLog")
-      .then(({ reportToMainLog }) => {
-        reportToMainLog(
-          "error",
-          "courseContentScan",
-          "Failed to scan course content directory",
-          {
-            error: error instanceof Error ? error.message : String(error),
-          },
-        );
-      })
-      .catch(() => {});
+    reportToMainLog(
+      "error",
+      "courseContentScan",
+      "Failed to scan course content directory",
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
     return { hasLocal: true, weeks: [] };
   }
 }

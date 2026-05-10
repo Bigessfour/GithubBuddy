@@ -4,6 +4,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { getAppProjectRoot } from "./projectRoot";
+import { reportToMainLog } from "./reportToMainLog";
 
 export interface DayFile {
   name: string;
@@ -21,7 +23,7 @@ export function loadDayFocusFromDisk(
   day: number,
 ): DayFocusContent | null {
   const courseRoot = path.join(
-    process.cwd(),
+    getAppProjectRoot(),
     "data",
     "course-content",
     "aico-echo",
@@ -56,20 +58,16 @@ export function loadDayFocusFromDisk(
     return { week, day, files };
   } catch (error) {
     console.error("[dayFocusLoader] Failed to load day focus content:", error);
-    void import("./reportToMainLog")
-      .then(({ reportToMainLog }) => {
-        reportToMainLog(
-          "error",
-          "dayFocusLoader",
-          "Failed to load day focus content",
-          {
-            week,
-            day,
-            error: error instanceof Error ? error.message : String(error),
-          },
-        );
-      })
-      .catch(() => {});
+    reportToMainLog(
+      "error",
+      "dayFocusLoader",
+      "Failed to load day focus content",
+      {
+        week,
+        day,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
     return null;
   }
 }

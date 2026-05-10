@@ -30,6 +30,7 @@ describe("appLog", () => {
       message: "y",
       meta: { n: 1 },
     });
+    expect(log).toHaveBeenCalledWith("[X] y", '{"n":1}');
     log.mockRestore();
   });
 

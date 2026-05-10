@@ -4,6 +4,16 @@
 
 export type AppLogLevel = "debug" | "info" | "warn" | "error";
 
+function formatMetaForConsole(meta: unknown): string {
+  if (meta === undefined) return "";
+  if (typeof meta === "string") return meta;
+  try {
+    return JSON.stringify(meta);
+  } catch {
+    return String(meta);
+  }
+}
+
 export function appLog(
   level: AppLogLevel,
   scope: string,
@@ -11,16 +21,17 @@ export function appLog(
   meta?: unknown,
 ): void {
   const label = `[${scope}] ${message}`;
+  const extra = formatMetaForConsole(meta);
   switch (level) {
     case "debug":
     case "info":
-      console.log(label, meta ?? "");
+      console.log(label, extra);
       break;
     case "warn":
-      console.warn(label, meta ?? "");
+      console.warn(label, extra);
       break;
     case "error":
-      console.error(label, meta ?? "");
+      console.error(label, extra);
       break;
   }
 

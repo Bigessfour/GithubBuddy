@@ -1,4 +1,5 @@
 import React from "react";
+import { getCommandErrorHelp } from "../utils/shellCommandErrorHelp";
 
 /**
  * CommandOutput Component – v0.4
@@ -25,14 +26,22 @@ interface CommandOutputProps {
   output: string;
   error?: string;
   success: boolean;
+  /** When set, used with `error` to show Git/GitHub-oriented recovery steps. */
+  exitCode?: number | null;
 }
 
 export const CommandOutput: React.FC<CommandOutputProps> = ({
   output,
   error,
   success,
+  exitCode,
 }) => {
   if (!output && !error) return null;
+
+  const help =
+    !success && error
+      ? getCommandErrorHelp(error, exitCode ?? undefined)
+      : null;
 
   return (
     <div className={`command-output ${success ? "success" : "error"}`}>
@@ -50,6 +59,29 @@ export const CommandOutput: React.FC<CommandOutputProps> = ({
         <pre className="command-output-error">
           <code>{error}</code>
         </pre>
+      )}
+
+      {help && (
+        <section
+          className="command-output-help"
+          aria-label="Suggested fixes for this error"
+        >
+          <h4 className="command-output-help-title">{help.title}</h4>
+          <ol className="command-output-help-steps">
+            {help.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <ul className="command-output-help-links">
+            {help.links.map((l) => (
+              <li key={l.href}>
+                <a href={l.href} target="_blank" rel="noreferrer">
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

@@ -9,6 +9,20 @@ import { app } from "electron";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
+/** Coerce values for log lines (e.g. Electron `console-message` payloads may be non-strings). */
+export function stringifyLogValue(value: unknown): string {
+  if (value === null || value === undefined) return String(value);
+  const t = typeof value;
+  if (t === "string") return value;
+  if (t === "number" || t === "boolean" || t === "bigint") return String(value);
+  if (value instanceof Error) return `${value.name}: ${value.message}`;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
 let initialized = false;
 let currentLogFile = "";
 

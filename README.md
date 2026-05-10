@@ -65,9 +65,8 @@ References we followed:
 | **Vite**                          | Build Tool      | Extremely fast dev server and hot module replacement. Official React template.  | ^8.0.10           |
 | **@vitejs/plugin-react**          | Vite Plugin     | Enables React Fast Refresh and JSX transformation.                              | ^6.0.1            |
 | **Electron**                      | Desktop Runtime | Turns our web app into a real Mac (and Windows/Linux) desktop application.      | ^42.0.1           |
-| **electron-vite**                 | Electron + Vite | Official way to use Vite with Electron. Simplifies main/renderer process setup. | ^5.0.0            |
-| **vite-plugin-electron**          | Build Plugin    | Helps bundle Electron main process with Vite.                                   | ^0.29.1           |
-| **vite-plugin-electron-renderer** | Build Plugin    | Enables Node.js APIs in the renderer process safely.                            | ^0.14.7           |
+| **electron-vite**                 | Electron + Vite | Bundles main + preload + renderer; see `electron.vite.config.ts`.               | ^5.0.0            |
+| **vite-plugin-electron-renderer** | Vite Plugin     | Used in the **Electron renderer** config only; shims Node/Electron in the Vite bundle. | ^0.14.7           |
 | **TypeScript ESLint**             | Linting         | Catches common bugs and enforces consistent code style.                         | ^8.58.2           |
 | **ESLint + React plugins**        | Linting         | React-specific rules (hooks, refresh) to keep code clean.                       | Various           |
 

@@ -53,12 +53,14 @@ import {
   GitCommandError,
   runGitWithUpstreamProgress,
 } from "./runGitWithUpstreamProgress";
+import { getAppProjectRoot } from "./projectRoot";
 import {
   initAppFileLogging,
   writeAppLog,
   logMainInfo,
   logMainWarn,
   logMainError,
+  stringifyLogValue,
   type LogLevel,
 } from "./appFileLogger";
 
@@ -224,7 +226,8 @@ function createWindow() {
     const { level, message, lineNumber, sourceId } = event;
     const logLevel: LogLevel =
       level === 3 ? "error" : level === 2 ? "warn" : "info";
-    writeAppLog(logLevel, "RendererConsole", message, {
+    const text = stringifyLogValue(message);
+    writeAppLog(logLevel, "RendererConsole", text, {
       sourceId,
       lineNumber,
     });
@@ -234,7 +237,7 @@ function createWindow() {
         : level === 2
           ? "[Renderer WARN]"
           : "[Renderer LOG]";
-    console.log(`${prefix} ${message} (${sourceId}:${lineNumber})`);
+    console.log(`${prefix} ${text} (${sourceId}:${lineNumber})`);
   });
 
   mainWindow.webContents.on("did-finish-load", async () => {
@@ -390,7 +393,7 @@ ipcMain.handle(
         error: err,
         exitCode: -1,
       });
-      return { success: false, output: "", error: err };
+      return { success: false, output: "", error: err, exitCode: -1 };
     }
 
     try {
@@ -421,6 +424,7 @@ ipcMain.handle(
         success: result.success,
         output: result.output,
         error: result.error,
+        exitCode: result.exitCode ?? undefined,
       };
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
@@ -429,8 +433,9 @@ ipcMain.handle(
         success: false,
         output: "",
         error: message,
+        exitCode: -1,
       });
-      return { success: false, output: "", error: message };
+      return { success: false, output: "", error: message, exitCode: -1 };
     }
   },
 );
@@ -472,11 +477,12 @@ async function gitSyncCourseRepo(
   sender.send("upstream-status", {
     message: "Cloning course repo… (GitHub auth may be required)",
   });
+  removeIncompleteCloneDir(targetDir);
   fs.mkdirSync(path.dirname(targetDir), { recursive: true });
   await runGitWithUpstreamProgress(
     sender,
     ["clone", "--progress", "--", repoUrl, targetDir],
-    { cwd: process.cwd() },
+    { cwd: getAppProjectRoot() },
   );
   sender.send("upstream-status", {
     message: "Clone complete.",
@@ -503,7 +509,7 @@ ipcMain.handle("fetch-upstream-repo", async (event, repoUrl?: string) => {
   }
   const url = validated.url;
   const TARGET_DIR = path.join(
-    process.cwd(),
+    getAppProjectRoot(),
     "data",
     "course-content",
     "aico-echo",
@@ -528,7 +534,17 @@ ipcMain.handle("fetch-upstream-repo", async (event, repoUrl?: string) => {
   };
 
   const succeed = (msg: string) => {
-    writeReadOnlyUpstreamRecord(fs, path, TARGET_DIR, url);
+    try {
+      writeReadOnlyUpstreamRecord(fs, path, TARGET_DIR, url);
+    } catch (recordErr: unknown) {
+      const detail =
+        recordErr instanceof Error ? recordErr.message : String(recordErr);
+      logMainWarn("[Main] Upstream record file not written (clone/pull still OK):", detail);
+      writeAppLog("warn", "IPC", "fetch-upstream-repo record file skipped", {
+        error: detail,
+        targetDir: TARGET_DIR,
+      });
+    }
     writeAppLog("info", "IPC", "fetch-upstream-repo success", {
       url,
       message: msg,
@@ -629,6 +645,41 @@ ipcMain.handle("fetch-upstream-repo", async (event, repoUrl?: string) => {
    App Lifecycle
    ============================================================ */
 
+/**
+ * HTTP + WS origins for dev CSP when Vite may not be on 5173 (strictPort: false).
+ * electron-vite sets VITE_DEV_SERVER_URL to the URL the renderer server actually bound to.
+ */
+function viteDevServerOrigins(): { http: string[]; ws: string[] } {
+  const fallbackHttp = ["http://127.0.0.1:5173", "http://localhost:5173"];
+  const fallbackWs = ["ws://127.0.0.1:5173", "ws://localhost:5173"];
+  const raw = process.env.VITE_DEV_SERVER_URL?.trim();
+  if (!raw) {
+    return { http: fallbackHttp, ws: fallbackWs };
+  }
+  try {
+    const u = new URL(raw);
+    const http = [u.origin];
+    const altHost =
+      u.hostname === "127.0.0.1"
+        ? "localhost"
+        : u.hostname === "localhost"
+          ? "127.0.0.1"
+          : "";
+    if (altHost) {
+      const copy = new URL(u.href);
+      copy.hostname = altHost;
+      http.push(copy.origin);
+    }
+    const wsScheme = u.protocol === "https:" ? "wss" : "ws";
+    const portPart = u.port ? `:${u.port}` : "";
+    const ws = [`${wsScheme}://${u.hostname}${portPart}`];
+    if (altHost) ws.push(`${wsScheme}://${altHost}${portPart}`);
+    return { http, ws };
+  } catch {
+    return { http: fallbackHttp, ws: fallbackWs };
+  }
+}
+
 app.whenReady().then(() => {
   const logFile = initAppFileLogging();
   logMainInfo("[Main] Log file:", logFile);
@@ -636,18 +687,17 @@ app.whenReady().then(() => {
   // Dev-only CSP: Vite HMR uses eval, blob workers, and ws:// — see Electron security tutorial.
   // https://www.electronjs.org/docs/latest/tutorial/security
   if (!app.isPackaged) {
+    const { http: devHttp, ws: devWs } = viteDevServerOrigins();
     const devCsp =
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://127.0.0.1:5173 http://localhost:5173 blob:; " +
-      "worker-src 'self' blob: http://127.0.0.1:5173 http://localhost:5173; " +
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${devHttp.join(" ")} blob:; ` +
+      `worker-src 'self' blob: ${devHttp.join(" ")}; ` +
       "style-src 'self' 'unsafe-inline'; " +
       "img-src 'self' data: blob:; font-src 'self' data:; " +
-      "connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 http://127.0.0.1:5173 http://localhost:5173;";
+      `connect-src 'self' ${devWs.join(" ")} ${devHttp.join(" ")};`;
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       const baseUrl = details.url.split(/[?#]/)[0] ?? details.url;
-      const isViteDev =
-        baseUrl.startsWith("http://localhost:5173") ||
-        baseUrl.startsWith("http://127.0.0.1:5173");
+      const isViteDev = devHttp.some((origin) => baseUrl.startsWith(origin));
 
       const next: Record<string, string[] | undefined> = {
         ...details.responseHeaders,

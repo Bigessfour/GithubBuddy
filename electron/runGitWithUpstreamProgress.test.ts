@@ -8,6 +8,10 @@ vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
 }));
 
+vi.mock("./appFileLogger", () => ({
+  writeAppLog: vi.fn(),
+}));
+
 import { spawn } from "node:child_process";
 import {
   GitCommandError,

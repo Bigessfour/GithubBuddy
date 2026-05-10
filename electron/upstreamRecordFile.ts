@@ -1,6 +1,10 @@
 /**
  * After a successful clone/pull, write a read-only note in the course clone root
  * so students can see which GitHub URL Platoon Companion used.
+ *
+ * Overwrites are automated: a previous run chmods this file to 0o444, which blocks
+ * plain open-for-write. We use rename-from-temp (POSIX: replaces destination if the
+ * directory is writable) and fall back to chmod/unlink + write.
  */
 
 import type fs from "fs";
@@ -8,15 +12,9 @@ import type path from "path";
 
 export const UPSTREAM_RECORD_FILENAME = "PLATOON_COMPANION_UPSTREAM.txt";
 
-export function writeReadOnlyUpstreamRecord(
-  fsMod: typeof fs,
-  pathMod: typeof path,
-  courseCloneRoot: string,
-  url: string,
-): void {
-  const filePath = pathMod.join(courseCloneRoot, UPSTREAM_RECORD_FILENAME);
+function buildBody(url: string): string {
   const iso = new Date().toISOString();
-  const body =
+  return (
     [
       "Platoon Companion — upstream source record",
       "=======================================",
@@ -30,9 +28,68 @@ export function writeReadOnlyUpstreamRecord(
       "",
       "To exclude from commits, add this filename to .gitignore or discard the file.",
       "",
-    ].join("\n") + "\n";
+    ].join("\n") + "\n"
+  );
+}
 
+/** chmod 644 / unlink then write (handles leftover 0o444 file). */
+function writeViaChmodOverwrite(
+  fsMod: typeof fs,
+  filePath: string,
+  body: string,
+): void {
+  if (fsMod.existsSync(filePath)) {
+    try {
+      fsMod.chmodSync(filePath, 0o644);
+    } catch {
+      try {
+        fsMod.unlinkSync(filePath);
+      } catch {
+        /* writeFileSync below may throw with a clear error */
+      }
+    }
+  }
   fsMod.writeFileSync(filePath, body, { encoding: "utf8" });
+}
+
+export function writeReadOnlyUpstreamRecord(
+  fsMod: typeof fs,
+  pathMod: typeof path,
+  courseCloneRoot: string,
+  url: string,
+): void {
+  const filePath = pathMod.join(courseCloneRoot, UPSTREAM_RECORD_FILENAME);
+  const body = buildBody(url);
+  const dir = pathMod.dirname(filePath);
+
+  if (!fsMod.existsSync(dir)) {
+    fsMod.mkdirSync(dir, { recursive: true, mode: 0o755 });
+  }
+
+  const tmpPath = pathMod.join(
+    dir,
+    `.${UPSTREAM_RECORD_FILENAME}.${process.pid}.tmp`,
+  );
+
+  let done = false;
+  try {
+    fsMod.writeFileSync(tmpPath, body, { encoding: "utf8" });
+    fsMod.renameSync(tmpPath, filePath);
+    done = true;
+  } catch {
+    if (fsMod.existsSync(tmpPath)) {
+      try {
+        fsMod.unlinkSync(tmpPath);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  if (!done) {
+    writeViaChmodOverwrite(fsMod, filePath, body);
+  }
+
   try {
     fsMod.chmodSync(filePath, 0o444);
   } catch {

@@ -40,7 +40,10 @@ const DEFAULT_WEEK = 2;
 const DEFAULT_DAY = 4;
 
 function AppContent() {
-  appLog("info", "App", "App component mounted");
+  useEffect(() => {
+    appLog("info", "App", "App component mounted");
+  }, []);
+
   // === State ===
   // The currently chosen week and day. Changing these triggers guidance lookup and progress restore.
   const [selectedWeek, setSelectedWeek] = useState(DEFAULT_WEEK);

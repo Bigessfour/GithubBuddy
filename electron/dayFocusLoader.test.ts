@@ -7,6 +7,10 @@ vi.mock("./reportToMainLog", () => ({
   reportToMainLog: vi.fn(),
 }));
 
+vi.mock("./projectRoot", () => ({
+  getAppProjectRoot: () => "/pc-root",
+}));
+
 vi.mock("node:fs", () => ({
   default: {
     existsSync: vi.fn(),
@@ -17,6 +21,7 @@ vi.mock("node:fs", () => ({
 }));
 
 import fs from "node:fs";
+import { reportToMainLog } from "./reportToMainLog";
 import { loadDayFocusFromDisk } from "./dayFocusLoader";
 
 describe("loadDayFocusFromDisk", () => {
@@ -78,5 +83,11 @@ describe("loadDayFocusFromDisk", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(loadDayFocusFromDisk(1, 1)).toBeNull();
     expect(err).toHaveBeenCalled();
+    expect(reportToMainLog).toHaveBeenCalledWith(
+      "error",
+      "dayFocusLoader",
+      "Failed to load day focus content",
+      expect.objectContaining({ week: 1, day: 1, error: "io" }),
+    );
   });
 });
