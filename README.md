@@ -16,6 +16,8 @@ Updating from an older clone: workspace/upstream keys in browser storage were re
 
 **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md) (PR workflow, checks, releases/tags).
 
+**Course workflow reference:** [GIT Challenge Submission Workflow](docs/git-challenge-submission-workflow.docx) (`.docx` in [`docs/`](docs/)) — official-style submission steps for Git challenges; pairs with the guided checklist in the app. See also the [docs index](docs/README.md).
+
 **Maintainers:** On GitHub, open the repo **About** settings and add a short description, topics (for example `education`, `electron`, `react`, `vite`, `typescript`, `code-platoon`), and confirm the **License** badge shows **MIT**. Optional: rename the GitHub repository to `platoon-companion` only if you want the URL to match the product name everywhere—otherwise keep **`githubbuddy`** and use this README’s clone line.
 
 ## What Problem Does It Solve?
@@ -32,6 +34,13 @@ Many students are new to the terminal and GitHub best practices. This app remove
 - One-click **Run** buttons that execute allowlisted commands in your chosen workspace (with confirmation and streamed output in the desktop app)
 
 **Goal**: Turn every daily task into a repeatable, best-practice habit instead of copy-pasting commands you don't fully understand.
+
+### Curriculum alignment (GIT Challenge workflow)
+
+This project does not only _teach_ GitHub habits—it **follows the official Code Platoon Instructor GIT Challenge Submission Workflow** in what we show students: `wXdX-challenges` branch names, per-challenge folders under `weekX/dayY/`, the exact commit message format (`Complete week X day Y challenge Z`), PR title pattern (`WXDX - Challenge N - Your Name`), confirming `origin` / `upstream`, the **TA review complete** label, and the rule that new pushes update an open PR.
+
+- Checklist copy and commands live in [`src/data/days.ts`](src/data/days.ts) and match that guide 1:1 (with `{{WEEK}}` / `{{DAY}}` interpolation).
+- The instructor **`.gitignore`** appendix is checked in as [`docs/instructor-gitignore-template.txt`](docs/instructor-gitignore-template.txt) (same content as the Word guide); see also [`docs/git-challenge-submission-workflow.docx`](docs/git-challenge-submission-workflow.docx).
 
 ---
 
@@ -124,9 +133,9 @@ githubbuddy/
 2. **Enter the day** you're working on (e.g., "Week 2, Day 4" or simply "W2D4").
 3. **App looks up** the corresponding guidance data.
 4. **You see** a beautiful, numbered checklist with:
-   - Step title (e.g., "Create a feature branch")
-   - Best-practice explanation ("This keeps main clean and makes code review easier...")
-   - The exact command to run (`git checkout -b week2/day4-challenge`)
+   - Step title (e.g., "Create and check out the challenge branch for this day")
+   - Best-practice explanation (why the step matches the instructor workflow)
+   - The exact command to run (e.g. `git checkout -b w2d4-challenges`)
    - A big "Copy" button
 5. **Run from the app** (desktop): Choose your workspace folder → use **Run Command** on a step (confirmation + streamed output). The web build still uses copy-to-clipboard for commands.
 
@@ -155,7 +164,7 @@ All daily guidance lives in easy-to-edit files under `src/data/`. This means:
 
 Use this sequence when you first clone the repo or when you want to confirm everything works end-to-end.
 
-1. **Prerequisites** — Node.js 20+ and Git installed; clone this repository (your fork or the cohort remote you were given), e.g. `git clone https://github.com/YOUR_USERNAME/githubbuddy.git`, then `cd githubbuddy`.
+1. **Prerequisites** — Node.js **22.12+** and Git installed (see `package.json` `engines`); clone this repository (your fork or the cohort remote you were given), e.g. `git clone https://github.com/YOUR_USERNAME/githubbuddy.git`, then `cd githubbuddy`.
 
 2. **Install dependencies**
 
@@ -265,7 +274,7 @@ Platoon Companion can be run in two ways:
 
 ### Prerequisites (both platforms)
 
-- Node.js 20+ (we recommend the LTS version)
+- Node.js **22.12+** (required by the pinned `electron` major; use current Node 22 LTS)
 - Git
 - For desktop: nothing extra needed — Electron downloads its own binaries on first run
 
@@ -716,6 +725,30 @@ Feel free to ask questions about any part of the stack — that's the whole poin
 ## Electron Desktop App – Troubleshooting & AI-Assisted Fixes
 
 During the implementation of the desktop (Electron) version and the "Fetch Upstream Repo Data" button, we encountered several non-obvious issues that are common when combining Vite + React + Electron. The AI coding assistant helped diagnose each one in real time using the running terminal output, DevTools console, and screenshots.
+
+### Problem: `Error: Electron uninstall` when running `npm run electron:dev`
+
+#### Symptom
+
+```text
+error during start dev server and electron app:
+Error: Electron uninstall
+    at getElectronPath (…/electron-vite/dist/chunks/…)
+```
+
+#### Root Cause
+
+The `electron` npm package did not finish downloading its OS-specific binary, so `node_modules/electron/path.txt` is missing or empty. That happens if lifecycle scripts were skipped (`--ignore-scripts`), install was interrupted, or `node_modules` was copied incompletely.
+
+#### Fix
+
+From the project root:
+
+```bash
+npm run electron:install
+```
+
+Or reinstall: `rm -rf node_modules && npm ci --legacy-peer-deps` (see [INSTALL.md](INSTALL.md)). `postinstall` runs the same ensure step automatically on a normal install.
 
 ### Problem 1: Preload Script Fails with "Cannot use import statement outside a module"
 

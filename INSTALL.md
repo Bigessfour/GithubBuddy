@@ -6,7 +6,7 @@ The **GitHub repository** is named **`githubbuddy`**; after `git clone` you norm
 
 ## Requirements
 
-- **Node.js 20+** ([nodejs.org](https://nodejs.org/))
+- **Node.js 22.12+** ([nodejs.org](https://nodejs.org/)) — matches the `electron` package and CI; `package.json` declares `engines.node`.
 - **Git**
 - **GitHub CLI (`gh`)** (recommended for **private** `https://github.com/...` course repos in the desktop app) — [cli.github.com](https://cli.github.com/). If `git clone` / `git pull` fails for missing HTTPS credentials, the app can open a browser sign-in via `gh`; SSH remote URLs use your normal SSH setup instead.
 - **macOS, Windows, or Linux** (desktop commands are the same everywhere)
@@ -34,11 +34,14 @@ npm install --legacy-peer-deps
 
 The same resolution is used in **GitHub Actions** (`npm ci --legacy-peer-deps` in [.github/workflows/test.yml](.github/workflows/test.yml)), so CI matches a typical local install.
 
-`postinstall` may run the course setup helper (`setup-course`); follow any prompts, or run explicitly:
+`postinstall` runs **`scripts/ensure-electron.js`** (downloads the Electron binary if `node_modules/electron/path.txt` is missing — avoids `Error: Electron uninstall` from electron-vite) and then the course setup helper (`setup-course`). Follow any prompts, or run explicitly:
 
 ```bash
+npm run electron:install   # repair Electron binary only (safe to re-run)
 npm run setup-course
 ```
+
+Never use `npm install --ignore-scripts` for this project unless you run `npm run electron:install` afterward.
 
 For dynamic **Day focus** content, you need the course materials under `data/course-content/aico-echo` (see README → v0.6 / setup-course).
 

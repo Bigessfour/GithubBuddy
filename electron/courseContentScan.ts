@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getAppProjectRoot } from "./projectRoot";
 import { reportToMainLog } from "./reportToMainLog";
+import { resolveLessonScan } from "./courseLessonLayout";
 
 export type WeekDayInfo = { week: number; days: number[] };
 
@@ -42,29 +43,7 @@ export function scanCourseContentFromDisk(): {
   }
 
   try {
-    const entries = fs.readdirSync(coursePath, { withFileTypes: true });
-
-    const weeks = entries
-      .filter((entry) => entry.isDirectory() && /^week\d+$/i.test(entry.name))
-      .map((entry) => {
-        const weekNum = parseInt(entry.name.replace(/^week/i, ""), 10);
-        const weekPath = path.join(coursePath, entry.name);
-
-        let days: number[] = [];
-        try {
-          const dayEntries = fs.readdirSync(weekPath, { withFileTypes: true });
-          days = dayEntries
-            .filter((d) => d.isDirectory() && /^day\d+$/i.test(d.name))
-            .map((d) => parseInt(d.name.replace(/^day/i, ""), 10))
-            .sort((a, b) => a - b);
-        } catch {
-          // ignore unreadable week folders
-        }
-
-        return { week: weekNum, days };
-      })
-      .filter((w) => w.days.length > 0)
-      .sort((a, b) => a.week - b.week);
+    const { lessonRoot, weeks } = resolveLessonScan(coursePath);
 
     if (weeks.length === 0) {
       const now = Date.now();
@@ -74,8 +53,8 @@ export function scanCourseContentFromDisk(): {
         reportToMainLog(
           "warn",
           "courseContentScan",
-          "Course folder exists but no week*/day* content was found",
-          { coursePath },
+          "Course folder exists but no recognizable week*/day* lesson folders were found",
+          { coursePath, lessonRoot },
         );
       }
     }

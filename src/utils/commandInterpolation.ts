@@ -16,7 +16,7 @@ const MAX_SUBSTITUTED_LEN = 50_000;
  *
  * Placeholders:
  * - {{WEEK}}, {{DAY}} — numbers from the current day guidance
- * - {{BRANCH}} — e.g. week2/day4-challenge
+ * - {{BRANCH}} — Code Platoon challenge branch: w{week}d{day}-challenges (e.g. w2d4-challenges)
  * - {{UPSTREAM}} — local course repo path; if unset, leaves {{UPSTREAM}} literal so the student fixes settings
  */
 export function buildStepCommand(
@@ -25,7 +25,7 @@ export function buildStepCommand(
   day: number,
   ctx: CommandInterpolationContext,
 ): string {
-  const branch = `week${week}/day${day}-challenge`;
+  const branch = `w${week}d${day}-challenges`;
   let cmd = step.command;
 
   cmd = cmd.replaceAll("{{WEEK}}", String(week));

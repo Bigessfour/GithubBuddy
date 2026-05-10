@@ -259,7 +259,9 @@ export function DaySelector({
         >
           <strong>Course folder found, but no week/day lessons detected.</strong>{" "}
           The clone at <code>data/course-content/aico-echo</code> should contain
-          folders like <code>week1/day1</code>. Try{" "}
+          lesson folders such as <code>week1/day1</code>,{" "}
+          <code>week-1/day-1</code>, or the same pattern one level down (e.g.{" "}
+          <code>curriculum/week1/day1</code>). Try{" "}
           <strong>Fetch upstream</strong> again, confirm you have access to the
           repo on GitHub, or ask your instructor if your cohort uses a different
           layout.{" "}

@@ -11,7 +11,7 @@ describe("getDayGuidance", () => {
     expect(guidance).toBeDefined();
     expect(guidance?.week).toBe(2);
     expect(guidance?.day).toBe(4);
-    expect(guidance?.steps.length).toBe(7);
+    expect(guidance?.steps.length).toBe(9);
   });
 
   it("should return guidance for Week 2 Days 1–5", () => {
@@ -58,6 +58,8 @@ describe("buildStandardGithubDayWorkflow", () => {
       "s5",
       "s6",
       "s7",
+      "s8",
+      "s9",
     ]);
   });
 });

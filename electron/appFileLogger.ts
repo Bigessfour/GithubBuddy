@@ -67,11 +67,11 @@ export function initAppFileLogging(): string {
   const dir = getLogsDirectory();
   fs.mkdirSync(dir, { recursive: true });
   const day = new Date().toISOString().slice(0, 10);
-  currentLogFile = path.join(dir, `platoon-companion-${day}.log`);
+  currentLogFile = path.join(dir, `githubbuddy-${day}.log`);
   initialized = true;
 
   appendRaw(
-    `\n========== session ${new Date().toISOString()} | platoon-companion ${app.getVersion()} | packaged=${app.isPackaged} ==========\n`,
+    `\n========== session ${new Date().toISOString()} | githubbuddy ${app.getVersion()} | packaged=${app.isPackaged} ==========\n`,
   );
   return currentLogFile;
 }

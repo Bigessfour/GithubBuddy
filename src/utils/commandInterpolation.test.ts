@@ -17,7 +17,7 @@ describe("buildStepCommand", () => {
   it("replaces WEEK, DAY, and BRANCH", () => {
     const step = baseStep("git checkout -b {{BRANCH}}");
     const out = buildStepCommand(step, 2, 4, { upstreamPath: null });
-    expect(out).toBe("git checkout -b week2/day4-challenge");
+    expect(out).toBe("git checkout -b w2d4-challenges");
   });
 
   it("replaces UPSTREAM when path is set", () => {

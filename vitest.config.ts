@@ -14,6 +14,8 @@ export default defineConfig({
       include: [
         "src/**/*.{ts,tsx}",
         "electron/courseContentScan.ts",
+        "electron/courseFolderNames.ts",
+        "electron/courseLessonLayout.ts",
         "electron/classifyGitRemoteFailure.ts",
         "electron/dayFocusLoader.ts",
         "electron/ghAuthForGitHub.ts",
@@ -24,6 +26,7 @@ export default defineConfig({
       exclude: [
         "**/*.test.{ts,tsx}",
         "**/src/test/**",
+        "**/* 2.*",
         "src/types/electron.d.ts",
         "src/types/index.ts",
         "electron/main.ts",

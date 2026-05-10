@@ -756,6 +756,120 @@
   border-top: 1px solid var(--border);
   font-size: 13px;
   color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+.footer-how-it-works {
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.footer-how-it-works:hover {
+  color: var(--text-h);
+}
+
+.footer-how-it-works:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.process-intro-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.process-intro-dialog {
+  max-width: 520px;
+  width: 100%;
+  max-height: min(90vh, 640px);
+  overflow: auto;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: var(--shadow);
+}
+
+.process-intro-title {
+  margin: 0 0 16px;
+  font-size: 20px;
+  color: var(--text-h);
+}
+
+.process-intro-steps {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.process-intro-steps li {
+  margin-bottom: 12px;
+}
+
+.process-intro-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.process-intro-code {
+  font-size: 13px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.process-intro-footnote {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.95;
+}
+
+.process-intro-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.process-intro-primary {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: var(--bg);
+  background: var(--accent);
+}
+
+.process-intro-primary:hover {
+  filter: brightness(1.05);
+}
+
+.process-intro-primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 /* 

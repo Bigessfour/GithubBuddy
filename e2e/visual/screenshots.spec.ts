@@ -5,6 +5,12 @@ import { test, expect } from "@playwright/test";
  *   npx playwright test e2e/visual/screenshots --update-snapshots
  */
 test.describe("Full-page screenshots", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("githubbuddy-intro-dismissed-v1", "1");
+    });
+  });
+
   test("default load (guidance or day-focus)", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("main.main-content")).toBeVisible();
@@ -18,7 +24,7 @@ test.describe("Full-page screenshots", () => {
   test("workspace selected + guidance (run controls)", async ({ page }) => {
     await page.context().addInitScript(() => {
       localStorage.setItem(
-        "platoon-companion-workspace",
+        "githubbuddy-workspace",
         "/demo/workspace-for-screenshot",
       );
     });

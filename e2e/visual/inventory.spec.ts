@@ -27,10 +27,16 @@ async function assertInventory(
   }
 }
 
+test("inventory manifest is stable", () => {
+  expect(INVENTORY_VERSION).toBe(1);
+  expect(totalInventoryEntries()).toBeGreaterThanOrEqual(55);
+});
+
 test.describe("Visual inventory (presence)", () => {
-  test("inventory manifest is stable", () => {
-    expect(INVENTORY_VERSION).toBe(1);
-    expect(totalInventoryEntries()).toBeGreaterThanOrEqual(55);
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("githubbuddy-intro-dismissed-v1", "1");
+    });
   });
 
   test("shell: fixed chrome is always visible on /", async ({ page }) => {

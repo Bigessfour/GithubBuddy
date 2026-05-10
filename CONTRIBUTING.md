@@ -22,6 +22,8 @@ Course staff: upstream may still be aligning day-to-day practice with this workf
 npm install
 # If npm reports a peer dependency conflict (Vite 8 vs electron-vite), use:
 # npm install --legacy-peer-deps
+# Node 22.12+ required (see package.json engines). Do not use --ignore-scripts;
+# if Electron fails to start, run: npm run electron:install
 npm run lint
 npm test -- --run
 ```

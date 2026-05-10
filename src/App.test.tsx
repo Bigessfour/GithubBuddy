@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import App from "./App";
 import { getDayGuidance } from "./data/days";
-import { STORAGE_UPSTREAM, STORAGE_WORKSPACE } from "./constants/storage";
+import {
+  STORAGE_INTRO_DISMISSED_V1,
+  STORAGE_UPSTREAM,
+  STORAGE_WORKSPACE,
+} from "./constants/storage";
 
 vi.mock("./hooks/useDayGuidance", () => ({
   useDayGuidance: vi.fn(),
@@ -18,6 +22,7 @@ import { useDayFocus } from "./hooks/useDayFocus";
 describe("App", () => {
   beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem(STORAGE_INTRO_DISMISSED_V1, "1");
     vi.mocked(useDayFocus).mockReturnValue(null);
     vi.mocked(useDayGuidance).mockReturnValue(getDayGuidance(2, 4));
   });
@@ -87,7 +92,7 @@ describe("App", () => {
     );
     await vi.waitFor(() => {
       expect(setItem).toHaveBeenCalledWith(
-        "platoon-companion-workspace",
+        "githubbuddy-workspace",
         "/tmp/fork",
       );
     });
@@ -127,5 +132,42 @@ describe("App", () => {
     await vi.waitFor(() => {
       expect(removeItem).toHaveBeenCalledWith(STORAGE_UPSTREAM);
     });
+  });
+});
+
+describe("App first-run intro", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.mocked(useDayFocus).mockReturnValue(null);
+    vi.mocked(useDayGuidance).mockReturnValue(getDayGuidance(2, 4));
+  });
+
+  it("shows process intro dialog when not dismissed", () => {
+    render(<App />);
+    expect(
+      screen.getByRole("dialog", { name: /how platoon companion works/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("closes intro and persists dismiss on Got it", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /^got it$/i }));
+    expect(localStorage.getItem(STORAGE_INTRO_DISMISSED_V1)).toBe("1");
+    expect(
+      screen.queryByRole("dialog", { name: /how platoon companion works/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("reopens from footer without clearing dismiss flag", () => {
+    localStorage.setItem(STORAGE_INTRO_DISMISSED_V1, "1");
+    render(<App />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /how this works/i }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: /how platoon companion works/i }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^got it$/i }));
+    expect(localStorage.getItem(STORAGE_INTRO_DISMISSED_V1)).toBe("1");
   });
 });

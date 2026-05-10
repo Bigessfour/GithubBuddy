@@ -16,7 +16,7 @@ import {
 } from "../content/githubWorkflowHints";
 import { formatCommandErrorHelpForLog } from "../utils/shellCommandErrorHelp";
 
-const STORAGE_PREFIX = "platoon-companion-progress";
+const STORAGE_PREFIX = "githubbuddy-progress";
 
 type GuidancePanelProps = {
   /** `${week}-${day}` — changing parent `key` remounts this panel and reloads progress from localStorage. */

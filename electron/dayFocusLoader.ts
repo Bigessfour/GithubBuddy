@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getAppProjectRoot } from "./projectRoot";
 import { reportToMainLog } from "./reportToMainLog";
+import { resolveDayFocusDir } from "./courseLessonLayout";
 
 export interface DayFile {
   name: string;
@@ -28,9 +29,9 @@ export function loadDayFocusFromDisk(
     "course-content",
     "aico-echo",
   );
-  const dayPath = path.join(courseRoot, `week${week}`, `day${day}`);
+  const dayPath = resolveDayFocusDir(courseRoot, week, day);
 
-  if (!fs.existsSync(dayPath) || !fs.statSync(dayPath).isDirectory()) {
+  if (!dayPath || !fs.existsSync(dayPath) || !fs.statSync(dayPath).isDirectory()) {
     return null;
   }
 

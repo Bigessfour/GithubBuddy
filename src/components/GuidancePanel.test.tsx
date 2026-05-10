@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { GuidancePanel } from "./GuidancePanel";
 import { getDayGuidance } from "../data/days";
+import type { DayGuidance } from "../types";
 import { renderWithToast } from "../test/renderWithToast";
 import { WORKFLOW_TOASTS } from "../content/githubWorkflowHints";
 
@@ -32,11 +33,35 @@ describe("GuidancePanel", () => {
     expect(screen.getByText(/step-by-step checklist/i)).toBeInTheDocument();
   });
 
-  it("shows upstream warning when placeholder remains", () => {
+  it("does not show upstream warning when guidance has no {{UPSTREAM}} steps", () => {
     renderWithToast(
       <GuidancePanel
         progressScope="2-1"
         guidance={guidance}
+        workspacePath="/work"
+        upstreamPath={null}
+      />,
+    );
+    expect(document.querySelector(".upstream-warning")).toBeNull();
+  });
+
+  it("shows upstream warning when a resolved step still contains {{UPSTREAM}}", () => {
+    const synthetic: DayGuidance = {
+      ...guidance,
+      steps: [
+        {
+          id: "sx",
+          title: "Copy from upstream",
+          why: "Test step",
+          command: "cp -r {{UPSTREAM}}/week{{WEEK}}/day{{DAY}} .",
+          category: "terminal",
+        },
+      ],
+    };
+    renderWithToast(
+      <GuidancePanel
+        progressScope="2-1-synth"
+        guidance={synthetic}
         workspacePath="/work"
         upstreamPath={null}
       />,
@@ -176,7 +201,7 @@ describe("GuidancePanel", () => {
     );
 
     await waitFor(() => {
-      expect(executeCommand.mock.calls.length).toBeGreaterThanOrEqual(6);
+      expect(executeCommand.mock.calls.length).toBeGreaterThanOrEqual(8);
     });
     expect(
       await screen.findByText(WORKFLOW_TOASTS.runAllFinished),
