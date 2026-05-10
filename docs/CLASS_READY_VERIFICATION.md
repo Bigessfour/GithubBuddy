@@ -71,7 +71,7 @@ Configured with:
 
 | Item | Value |
 | --- | --- |
-| Annotated tag | `v0.6.0` → commit `fcd12bbd2b1d5a71281e07f2e1150a561fd54ddc` (same as `main` at merge of PR #2) |
+| Annotated tag | `v0.6.0` — confirm with `git rev-parse v0.6.0^{commit}` (must match the `main` commit you intended to ship for 0.6.0) |
 | Release | [github.com/Bigessfour/GithubBuddy/releases/tag/v0.6.0](https://github.com/Bigessfour/GithubBuddy/releases/tag/v0.6.0) |
 
 Commands used:
@@ -96,7 +96,7 @@ gh repo view Bigessfour/GithubBuddy --json description,repositoryTopics,licenseI
 gh api repos/Bigessfour/GithubBuddy/branches/main/protection
 
 # Tags
-git fetch --tags && git tag -l 'v*'
+git fetch --tags && git tag -l 'v*' && git rev-parse v0.6.0^{commit}
 
 # Merge commits on main
 git log main --merges --oneline -5
