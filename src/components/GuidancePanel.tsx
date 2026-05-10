@@ -14,6 +14,7 @@ import {
   WORKFLOW_TOASTS,
   WORKFLOW_TOOLTIPS,
 } from "../content/githubWorkflowHints";
+import { formatCommandErrorHelpForLog } from "../utils/shellCommandErrorHelp";
 
 const STORAGE_PREFIX = "platoon-companion-progress";
 
@@ -135,9 +136,13 @@ export function GuidancePanel({
         unsubOut?.();
         if (!result.success) {
           stoppedEarly = true;
+          const help = formatCommandErrorHelpForLog(
+            result.error,
+            result.exitCode,
+          );
           setBatchLog(
             (prev) =>
-              `${prev}\nStopped: command failed.${result.error ? `\n${result.error}` : ""}\n`,
+              `${prev}\nStopped: command failed.${result.error ? `\n${result.error}` : ""}${help}`,
           );
           break;
         }

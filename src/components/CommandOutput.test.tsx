@@ -20,6 +20,21 @@ describe("CommandOutput", () => {
     expect(screen.getByText("bad")).toBeInTheDocument();
   });
 
+  it("shows recovery steps for known git errors", () => {
+    render(
+      <CommandOutput
+        output=""
+        error="fatal: not a git repository (or any of the parent directories): .git"
+        success={false}
+        exitCode={128}
+      />,
+    );
+    expect(
+      screen.getByRole("region", { name: /suggested fixes/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Workspace/i)).toBeInTheDocument();
+  });
+
   it("renders both output and error regions", () => {
     render(<CommandOutput output="out" error="err" success={false} />);
     expect(screen.getByText("out")).toBeInTheDocument();

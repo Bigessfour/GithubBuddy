@@ -17,7 +17,8 @@ import { resolve } from "path";
  *
  * Known build-time messages (toolchain / plugins — not app bugs):
  * - "Invalid output options … freeze" — Vite 8 + Rolldown option mismatch; tracked upstream.
- * - "`resolve.alias` … customResolver … deprecated" — from electron-vite / Vite 9 migration path.
+ * - "`resolve.alias` … customResolver … deprecated" — emitted by `vite-plugin-electron-renderer@0.14.x`
+ *   (uses Vite's deprecated alias API); migration is upstream: https://github.com/electron-vite/vite-plugin-electron-renderer
  * - `[INEFFECTIVE_DYNAMIC_IMPORT]` for reportToMainLog — preload static-imports the same module
  *   that scanners dynamic-import; harmless for our bundle shape.
  *
@@ -55,7 +56,8 @@ export default defineConfig({
     plugins: [react(), renderer()],
     server: {
       port: 5173,
-      strictPort: true,
+      /** Prefer 5173; if another Vite/Electron instance holds it, try the next port (see main CSP + VITE_DEV_SERVER_URL). */
+      strictPort: false,
       /**
        * Cross-origin isolation (COOP + COEP) so SharedArrayBuffer is allowed.
        * Without this, Chromium logs "SharedArrayBuffer usage is restricted…"

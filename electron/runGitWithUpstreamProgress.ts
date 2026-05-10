@@ -8,6 +8,7 @@
 
 import { spawn } from "node:child_process";
 import type { WebContents } from "electron";
+import { writeAppLog } from "./appFileLogger";
 import { parseGitFetchProgressPercent } from "./parseGitFetchProgress";
 
 /** Thrown when `git` exits non-zero; includes full stderr for auth/access heuristics. */
@@ -50,6 +51,11 @@ export function runGitWithUpstreamProgress(
   options: { cwd?: string } = {},
 ): Promise<void> {
   return new Promise((resolve, reject) => {
+    const op = gitArgs[0] ?? "?";
+    writeAppLog("info", "Git", `git ${op} starting`, {
+      cwd: options.cwd ?? process.cwd(),
+    });
+
     const child = spawn("git", gitArgs, {
       cwd: options.cwd,
       windowsHide: true,
@@ -87,6 +93,9 @@ export function runGitWithUpstreamProgress(
         buffer = "";
       }
       if (code === 0) {
+        writeAppLog("info", "Git", `git ${op} completed`, {
+          cwd: options.cwd ?? process.cwd(),
+        });
         resolve();
         return;
       }

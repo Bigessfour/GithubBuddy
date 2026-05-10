@@ -13,6 +13,13 @@ export const GITHUB_DOC_URLS = {
     "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork",
   cloneRepo:
     "https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository",
+  managingRemotes:
+    "https://docs.github.com/en/get-started/git-basics/managing-remote-repositories",
+  personalAccessToken:
+    "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token",
+  sshKeys:
+    "https://docs.github.com/en/authentication/connecting-to-github-with-ssh",
+  ghCli: "https://cli.github.com/manual/",
 } as const;
 
 /** Tooltip strings: extra context only; primary actions stay visible in the UI. */
@@ -86,4 +93,7 @@ export const WORKFLOW_TOASTS = {
     "Your GitHub account cannot access this repository. Ask your Code Platoon instructor for the correct repo URL or access.",
   runAllFinished:
     "Run all finished. Review the log above for any stopped steps.",
+  /** Shown when generic fetch fails — students should fix auth before retrying. */
+  fetchUpstreamFetchFailed:
+    "Git could not update the course repo. If you use HTTPS: sign in with the GitHub CLI (gh) when prompted, or use SSH and an SSH key added to GitHub. If the repo is private, confirm your account has access.",
 } as const;

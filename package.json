@@ -1,5 +1,7 @@
 {
-  "name": "platoon-companion",
+  "name": "githubbuddy",
+  "description": "Platoon Companion — Code Platoon GitHub workflow learning app (web + Electron desktop).",
+  "license": "MIT",
   "private": true,
   "version": "0.6.0",
   "type": "module",
@@ -13,8 +15,9 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:ci": "playwright test e2e/visual/inventory.spec.ts",
+    "test:e2e:ci": "playwright test e2e/visual/inventory.spec.ts e2e/functional/app-interactions.spec.ts",
     "test:e2e:update-snapshots": "playwright test e2e/visual/screenshots.spec.ts --update-snapshots",
+    "vite:version": "vite --version",
     "electron:dev": "electron-vite dev",
     "electron:build": "electron-vite build",
     "electron:clean": "node -e \"const fs=require('fs');['out','dist-electron'].forEach(d=>{try{fs.rmSync(d,{recursive:true,force:true});}catch(e){}})\"",
@@ -48,7 +51,6 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.10",
-    "vite-plugin-electron": "^0.29.1",
     "vite-plugin-electron-renderer": "^0.14.7",
     "vitest": "^4.1.5"
   }

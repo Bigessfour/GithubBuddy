@@ -27,6 +27,7 @@ declare global {
         success: boolean;
         output: string;
         error?: string;
+        exitCode?: number;
       }>;
       getCourseContentScan: () => {
         hasLocal: boolean;

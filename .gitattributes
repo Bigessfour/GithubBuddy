@@ -1,0 +1,2 @@
+# Cursor IDE rules are optional for consumers; omit from `git archive` tarballs/zip exports.
+.cursor export-ignore

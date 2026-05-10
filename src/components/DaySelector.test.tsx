@@ -8,8 +8,11 @@ const mockHasLocal = vi.fn();
 const mockGetWeeks = vi.fn();
 
 vi.mock("../utils/courseScanner", () => ({
-  hasLocalCourseContent: () => mockHasLocal(),
-  getAvailableWeeksAndDays: () => mockGetWeeks(),
+  getLocalCourseScan: () => ({
+    bridgeActive: true,
+    hasLocal: mockHasLocal(),
+    weeks: mockGetWeeks(),
+  }),
 }));
 
 describe("DaySelector", () => {
@@ -158,6 +161,50 @@ describe("DaySelector", () => {
       screen.getByRole("button", { name: /fetch upstream repo data/i }),
     );
     await waitFor(() => expect(fetchUpstreamRepo).toHaveBeenCalledWith(custom));
+  });
+
+  it("shows course layout alert in desktop mode when clone has no week/day folders", () => {
+    window.electronAPI = {
+      selectWorkspace: vi.fn(),
+      selectUpstreamFolder: vi.fn(),
+      executeCommand: vi.fn(),
+      getCourseContentScan: vi.fn(),
+      getDayFocusContent: vi.fn(),
+      fetchUpstreamRepo: vi.fn(),
+    };
+    mockHasLocal.mockReturnValue(true);
+    mockGetWeeks.mockReturnValue([]);
+    renderWithToast(
+      <DaySelector selectedWeek={2} selectedDay={2} onChange={onChange} />,
+    );
+    expect(
+      screen.getByText(/Course folder found, but no week\/day lessons detected/i),
+    ).toBeInTheDocument();
+  });
+
+  it("fetch upstream: FETCH_FAILED toast includes GitHub auth guidance", async () => {
+    window.electronAPI = {
+      selectWorkspace: vi.fn(),
+      selectUpstreamFolder: vi.fn(),
+      executeCommand: vi.fn(),
+      getCourseContentScan: vi.fn(),
+      getDayFocusContent: vi.fn(),
+      fetchUpstreamRepo: vi.fn().mockResolvedValue({
+        success: false,
+        error: "git exited 1",
+        code: "FETCH_FAILED",
+      }),
+      onUpstreamStatus: vi.fn(() => () => {}),
+    };
+    renderWithToast(
+      <DaySelector selectedWeek={2} selectedDay={2} onChange={onChange} />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /fetch upstream repo data/i }),
+    );
+    expect(
+      await screen.findByText(/Git could not update the course repo/i),
+    ).toBeInTheDocument();
   });
 
   it("fetch upstream: GH_CLI_MISSING shows install-gh toast copy", async () => {

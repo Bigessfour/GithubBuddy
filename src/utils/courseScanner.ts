@@ -98,6 +98,21 @@ function electronGetAvailableWeeksAndDays(): Array<{
   return getScanFromPreload().weeks;
 }
 
+/**
+ * Single preload scan — use when you need both `hasLocal` and `weeks` without double IPC.
+ */
+export function getLocalCourseScan(): {
+  bridgeActive: boolean;
+  hasLocal: boolean;
+  weeks: Array<{ week: number; days: number[] }>;
+} {
+  if (!electronPreloadBridgeActive()) {
+    return { bridgeActive: false, hasLocal: false, weeks: [] };
+  }
+  const s = getScanFromPreload();
+  return { bridgeActive: true, hasLocal: s.hasLocal, weeks: s.weeks };
+}
+
 /* ============================================================
    PUBLIC API (Environment-aware)
    ============================================================ */

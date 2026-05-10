@@ -1,8 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  getAvailableWeeksAndDays,
-  hasLocalCourseContent,
-} from "../utils/courseScanner";
+import { getLocalCourseScan } from "../utils/courseScanner";
 import {
   DEFAULT_UPSTREAM_REPO,
   resolveValidatedUpstreamUrl,
@@ -60,37 +57,37 @@ export function DaySelector({
 
   const isElectron = typeof window !== "undefined" && !!window.electronAPI;
 
-  const { availableWeeks, availableDays, usingLocalContent } = useMemo(() => {
-    // scanVersion bumps after "Fetch upstream" so we re-scan disk without effect setState.
-    void scanVersion;
-    if (!hasLocalCourseContent()) {
+  const { availableWeeks, availableDays, usingLocalContent, courseLayoutMismatch } =
+    useMemo(() => {
+      // scanVersion bumps after "Fetch upstream" so we re-scan disk without effect setState.
+      void scanVersion;
+      const { bridgeActive, hasLocal, weeks: weeksData } = getLocalCourseScan();
+      const courseLayoutMismatch = Boolean(
+        bridgeActive && hasLocal && weeksData.length === 0,
+      );
+
+      if (!bridgeActive || !hasLocal || weeksData.length === 0) {
+        return {
+          usingLocalContent: false,
+          courseLayoutMismatch,
+          availableWeeks: DEFAULT_WEEKS,
+          availableDays: DEFAULT_DAYS,
+        };
+      }
+      const weeks = weeksData.map((w) => w.week);
+      const currentWeekData =
+        weeksData.find((w) => w.week === selectedWeek) || weeksData[0];
       return {
-        usingLocalContent: false,
-        availableWeeks: DEFAULT_WEEKS,
-        availableDays: DEFAULT_DAYS,
+        usingLocalContent: true,
+        courseLayoutMismatch: false,
+        availableWeeks: weeks,
+        availableDays: currentWeekData ? currentWeekData.days : DEFAULT_DAYS,
       };
-    }
-    const weeksData = getAvailableWeeksAndDays();
-    if (weeksData.length === 0) {
-      return {
-        usingLocalContent: false,
-        availableWeeks: DEFAULT_WEEKS,
-        availableDays: DEFAULT_DAYS,
-      };
-    }
-    const weeks = weeksData.map((w) => w.week);
-    const currentWeekData =
-      weeksData.find((w) => w.week === selectedWeek) || weeksData[0];
-    return {
-      usingLocalContent: true,
-      availableWeeks: weeks,
-      availableDays: currentWeekData ? currentWeekData.days : DEFAULT_DAYS,
-    };
-  }, [selectedWeek, scanVersion]);
+    }, [selectedWeek, scanVersion]);
 
   const handleWeekChange = (newWeek: number) => {
     if (usingLocalContent) {
-      const weeksData = getAvailableWeeksAndDays();
+      const weeksData = getLocalCourseScan().weeks;
       const weekData = weeksData.find((w) => w.week === newWeek);
       if (weekData) {
         onChange(newWeek, weekData.days[0]);
@@ -113,6 +110,8 @@ export function DaySelector({
       return WORKFLOW_TOASTS.fetchUpstreamGhAuthFailed;
     if (code === "NO_REPO_ACCESS")
       return WORKFLOW_TOASTS.fetchUpstreamNoRepoAccess;
+    if (code === "FETCH_FAILED")
+      return `${WORKFLOW_TOASTS.fetchUpstreamFetchFailed} Details: ${detail}`;
     return detail;
   };
 
@@ -250,6 +249,38 @@ export function DaySelector({
           Using local course content from{" "}
           <code>data/course-content/aico-echo</code> — full day focus loaded
         </p>
+      )}
+
+      {isElectron && courseLayoutMismatch && (
+        <div
+          className="course-layout-alert"
+          role="status"
+          aria-live="polite"
+        >
+          <strong>Course folder found, but no week/day lessons detected.</strong>{" "}
+          The clone at <code>data/course-content/aico-echo</code> should contain
+          folders like <code>week1/day1</code>. Try{" "}
+          <strong>Fetch upstream</strong> again, confirm you have access to the
+          repo on GitHub, or ask your instructor if your cohort uses a different
+          layout.{" "}
+          <a
+            href={GITHUB_DOC_URLS.cloneRepo}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-doc-link"
+          >
+            Cloning a repository
+          </a>
+          {" · "}
+          <a
+            href={GITHUB_DOC_URLS.managingRemotes}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-doc-link"
+          >
+            Managing remotes
+          </a>
+        </div>
       )}
 
       {isElectron && (

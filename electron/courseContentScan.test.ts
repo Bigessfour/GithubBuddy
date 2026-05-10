@@ -7,6 +7,10 @@ vi.mock("./reportToMainLog", () => ({
   reportToMainLog: vi.fn(),
 }));
 
+vi.mock("./projectRoot", () => ({
+  getAppProjectRoot: () => "/pc-root",
+}));
+
 vi.mock("node:fs", () => ({
   default: {
     existsSync: vi.fn(),
@@ -16,10 +20,12 @@ vi.mock("node:fs", () => ({
 }));
 
 import fs from "node:fs";
+import { reportToMainLog } from "./reportToMainLog";
 import { scanCourseContentFromDisk } from "./courseContentScan";
 
 describe("scanCourseContentFromDisk", () => {
   beforeEach(() => {
+    vi.mocked(reportToMainLog).mockClear();
     vi.mocked(fs.existsSync).mockReturnValue(false);
     vi.mocked(fs.statSync).mockReturnValue({
       isDirectory: () => true,
@@ -66,6 +72,7 @@ describe("scanCourseContentFromDisk", () => {
         { week: 10, days: [1] },
       ],
     });
+    expect(reportToMainLog).not.toHaveBeenCalled();
   });
 
   it("returns empty when existsSync throws", () => {
@@ -83,6 +90,12 @@ describe("scanCourseContentFromDisk", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(scanCourseContentFromDisk()).toEqual({ hasLocal: true, weeks: [] });
     expect(err).toHaveBeenCalled();
+    expect(reportToMainLog).toHaveBeenCalledWith(
+      "error",
+      "courseContentScan",
+      "Failed to scan course content directory",
+      expect.objectContaining({ error: "io" }),
+    );
   });
 
   it("skips week folders that fail to read", () => {
@@ -95,5 +108,29 @@ describe("scanCourseContentFromDisk", () => {
         throw new Error("bad week");
       });
     expect(scanCourseContentFromDisk()).toEqual({ hasLocal: true, weeks: [] });
+    expect(reportToMainLog).toHaveBeenCalledWith(
+      "warn",
+      "courseContentScan",
+      "Course folder exists but no week*/day* content was found",
+      expect.objectContaining({ coursePath: expect.any(String) }),
+    );
+  });
+
+  it("warns when course exists but no week folders have day content", () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readdirSync)
+      .mockReturnValueOnce([
+        { name: "week1", isDirectory: () => true } as fs.Dirent,
+      ])
+      .mockReturnValueOnce([
+        { name: "notes.txt", isDirectory: () => false } as fs.Dirent,
+      ]);
+    expect(scanCourseContentFromDisk()).toEqual({ hasLocal: true, weeks: [] });
+    expect(reportToMainLog).toHaveBeenCalledWith(
+      "warn",
+      "courseContentScan",
+      "Course folder exists but no week*/day* content was found",
+      expect.objectContaining({ coursePath: expect.any(String) }),
+    );
   });
 });

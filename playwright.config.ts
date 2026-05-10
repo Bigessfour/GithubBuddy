@@ -21,7 +21,8 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run dev",
+    /** Explicit CLI flags per https://vite.dev/guide/cli — matches `baseURL` and fails if 5173 is taken. */
+    command: "npx vite --port 5173 --strictPort",
     url: "http://localhost:5173",
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

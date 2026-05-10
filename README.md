@@ -4,6 +4,20 @@
 
 A helpful desktop/web companion app for Code Platoon AI DevOps students. It guides you through the correct GitHub workflow for each day's lesson, lab, and challenge so you build strong professional habits from day one.
 
+## Repository and naming
+
+- **Product name (in the app):** **Platoon Companion**
+- **GitHub repository slug:** **`githubbuddy`** — clone with `git clone https://github.com/YOUR_USERNAME/githubbuddy.git`, then `cd githubbuddy` (your local folder name matches the repo).
+- **npm package name:** `githubbuddy` (see [`package.json`](package.json)).
+
+Updating from an older clone: workspace/upstream keys in browser storage were renamed; you may need to **choose your workspace folder again** once.
+
+**License:** [MIT](LICENSE) — required for redistribution; keep the file in the repo root.
+
+**Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md) (PR workflow, checks, releases/tags).
+
+**Maintainers:** On GitHub, open the repo **About** settings and add a short description, topics (for example `education`, `electron`, `react`, `vite`, `typescript`, `code-platoon`), and confirm the **License** badge shows **MIT**. Optional: rename the GitHub repository to `platoon-companion` only if you want the URL to match the product name everywhere—otherwise keep **`githubbuddy`** and use this README’s clone line.
+
 ## What Problem Does It Solve?
 
 In the Code Platoon course, instructors often say things like:
@@ -21,26 +35,31 @@ Many students are new to the terminal and GitHub best practices. This app remove
 
 ---
 
-## Our Git Workflow – Leading by Example
+## Git workflow: history, teaching, and next steps
 
-This project doesn't just _teach_ GitHub best practices — it **follows them**.
+This section is deliberately **honest**: students who run `git log` should not find a story in the README that the history contradicts.
 
-### How We Use GitHub in This Repository
+### What `git log` on this repo shows
 
-- The complete v1 (fully working React + TypeScript app with tests, educational comments, and documentation) was pushed directly to the `main` branch. This establishes a stable, working baseline that anyone can clone and run immediately.
-- All future development happens on **short-lived feature branches** (examples: `feat/add-week3-day1-guidance`, `feat/electron-desktop-packaging`, `feat/safe-command-execution`).
-- Changes are proposed via **Pull Requests** from feature branches (typically on **your fork** of this repo, e.g. `your-username/platoon-companion`), then reviewed and merged into `main`.
-- We never commit directly to `main` after the initial baseline.
-- Branch names are descriptive and follow a consistent pattern (`feat/`, `fix/`, `docs/`, etc.).
-- Every PR includes a clear description linking back to the feature or educational goal.
+- **Linear history on `main`.** Through v0.6, changes were integrated by **pushing commits directly to `main`**, not by merging a series of pull requests. That is a common pattern while bootstrapping a small educational codebase; it is **not** the same as full GitHub Flow with review on every change.
+- **Conventional Commits** (`feat:`, `fix:`, `docs:`, …) are used in commit messages, which matches the habit the app promotes.
+- **Topic branches** (for example `polish`) may exist for experiments; they are not yet the primary integration path for this upstream repo.
 
-### Why We Do It This Way
+### What the app still teaches (use this on your fork)
 
-By applying the exact same workflow the app teaches, this project becomes a living example. Students (and instructors) can look at the commit history and branch structure of **platoon-companion** and see professional GitHub flow in action — the same habits the Platoon Companion app is designed to instill.
+The in-app guidance describes the workflow you should use **in your own work**: short-lived **feature branches**, **pull requests**, and keeping **`main`** in good shape. **Do that on your fork** and in cohort assignments—the checklist is the source of truth for student practice.
 
-This is especially powerful for the Code Platoon AI DevOps course: the tool you use to learn best practices is itself built using those best practices.
+### What upstream maintainers should do to “lead by example”
 
-References we followed:
+To align this repository with what we teach:
+
+1. Stop landing routine work only via direct pushes to `main`; open **PRs** and use **merge** (or squash-merge) so history shows integration points.
+2. Turn on **branch protection** on `main` (see [Enabling Branch Protection](#enabling-branch-protection-required-for-professional-workflow) below) so CI must pass and (optionally) review is required.
+3. Keep using **Conventional Commits** and clear PR descriptions.
+
+Until those steps are routine here, treat the app as **teaching** professional GitHub habits; treat this upstream repo’s history as **catching up** to that standard—not as proof it was always done that way.
+
+References:
 
 - [GitHub Flow](https://docs.github.com/en/get-started/quickstart/github-flow)
 - [Pro Git – Branching](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging)
@@ -52,30 +71,29 @@ References we followed:
 
 ### Languages
 
-| Language             | Why We Use It                                                                                                                   | Documentation Referenced                                    |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| **TypeScript**       | Type safety catches mistakes early. Excellent IDE support and autocompletion. Industry standard for serious React apps.         | [TypeScript Handbook](https://www.typescriptlang.org/docs/) |
-| **React 19**         | Component-based UI. Fast, declarative, and has a huge ecosystem. Perfect for building interactive checklists and day selectors. | [React Docs](https://react.dev/)                            |
-| **CSS / Modern CSS** | We will use clean, scoped styles (and optionally Tailwind later) for a pleasant learning experience.                            | [MDN CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) |
+| Language | Why We Use It | Documentation Referenced |
+| --- | --- | --- |
+| **TypeScript** | Type safety catches mistakes early. Excellent IDE support and autocompletion. Industry standard for serious React apps. | [TypeScript Handbook](https://www.typescriptlang.org/docs/) |
+| **React 19** | Component-based UI. Fast, declarative, and has a huge ecosystem. Perfect for building interactive checklists and day selectors. | [React Docs](https://react.dev/) |
+| **CSS / Modern CSS** | We will use clean, scoped styles (and optionally Tailwind later) for a pleasant learning experience. | [MDN CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) |
 
 ### Core Packages & Tools
 
-| Package                           | Category        | Why We Use It                                                                   | Version (current) |
-| --------------------------------- | --------------- | ------------------------------------------------------------------------------- | ----------------- |
-| **Vite**                          | Build Tool      | Extremely fast dev server and hot module replacement. Official React template.  | ^8.0.10           |
-| **@vitejs/plugin-react**          | Vite Plugin     | Enables React Fast Refresh and JSX transformation.                              | ^6.0.1            |
-| **Electron**                      | Desktop Runtime | Turns our web app into a real Mac (and Windows/Linux) desktop application.      | ^42.0.1           |
-| **electron-vite**                 | Electron + Vite | Official way to use Vite with Electron. Simplifies main/renderer process setup. | ^5.0.0            |
-| **vite-plugin-electron**          | Build Plugin    | Helps bundle Electron main process with Vite.                                   | ^0.29.1           |
-| **vite-plugin-electron-renderer** | Build Plugin    | Enables Node.js APIs in the renderer process safely.                            | ^0.14.7           |
-| **TypeScript ESLint**             | Linting         | Catches common bugs and enforces consistent code style.                         | ^8.58.2           |
-| **ESLint + React plugins**        | Linting         | React-specific rules (hooks, refresh) to keep code clean.                       | Various           |
+| Package | Category | Why We Use It | Version (current) |
+| --- | --- | --- | --- |
+| **Vite** | Build Tool | Extremely fast dev server and hot module replacement. Official React template. | ^8.0.10 |
+| **@vitejs/plugin-react** | Vite Plugin | Enables React Fast Refresh and JSX transformation. | ^6.0.1 |
+| **Electron** | Desktop Runtime | Turns our web app into a real Mac (and Windows/Linux) desktop application. | ^42.0.1 |
+| **electron-vite** | Electron + Vite | Bundles main + preload + renderer; see `electron.vite.config.ts`. | ^5.0.0 |
+| **vite-plugin-electron-renderer** | Vite Plugin | Electron renderer config only; shims Node/Electron in the Vite bundle. | ^0.14.7 |
+| **TypeScript ESLint** | Linting | Catches common bugs and enforces consistent code style. | ^8.58.2 |
+| **ESLint + React plugins** | Linting | React-specific rules (hooks, refresh) to keep code clean. | Various |
 
 ### Planned / Future Packages
 
 - Deeper Playwright flows (Electron window, filesystem) beyond the current **browser visual** suite
 
-**Already in use:** Vitest and React Testing Library (`npm test`), plus **Playwright** for browser visual inventory and full-page screenshots (`npm run test:e2e`). Setup follows the official [Playwright installation guide](https://playwright.dev/docs/intro); install browsers once with `npx playwright install chromium`.
+**Already in use:** Vitest and React Testing Library (`npm test`), plus **Playwright** for browser visual inventory, lightweight interaction smoke tests, and full-page screenshots (`npm run test:e2e`). Setup follows the official [Playwright installation guide](https://playwright.dev/docs/intro); install browsers once with `npx playwright install chromium`.
 
 ---
 
@@ -83,8 +101,8 @@ References we followed:
 
 ### High-Level Architecture
 
-```
-platoon-companion/
+```text
+githubbuddy/
 ├── src/
 │   ├── components/          # Reusable UI pieces (DaySelector, StepCard, CommandBlock, etc.)
 │   ├── data/                # JSON or TypeScript files describing each day's guidance
@@ -128,7 +146,7 @@ All daily guidance lives in easy-to-edit files under `src/data/`. This means:
 - ✅ Workspace folder picker, command preview, and streaming command execution
 - ✅ Dynamic week/day scanning and **day focus** markdown loaded from a local course clone (via preload)
 - ✅ Guidance panel checklist with persisted progress; upstream repo setup script (`npm run setup-course`)
-- ✅ Playwright **browser** inventory in CI (presence checks + optional screenshot baselines locally)
+- ✅ Playwright **browser** inventory + interaction smoke in CI (optional screenshot baselines locally)
 - 🔜 Broader day coverage; optional **Electron-window** E2E if you want stricter release checks
 
 ---
@@ -137,7 +155,7 @@ All daily guidance lives in easy-to-edit files under `src/data/`. This means:
 
 Use this sequence when you first clone the repo or when you want to confirm everything works end-to-end.
 
-1. **Prerequisites** — Node.js 20+ and Git installed; clone this repository (your fork or the cohort remote you were given), e.g. `git clone https://github.com/YOUR_USERNAME/platoon-companion.git`, then `cd platoon-companion`.
+1. **Prerequisites** — Node.js 20+ and Git installed; clone this repository (your fork or the cohort remote you were given), e.g. `git clone https://github.com/YOUR_USERNAME/githubbuddy.git`, then `cd githubbuddy`.
 
 2. **Install dependencies**
 
@@ -175,7 +193,7 @@ Use this sequence when you first clone the repo or when you want to confirm ever
 
    Confirm the native window shows the same UI, workspace selection, and (if applicable) **Fetch upstream** / refreshed scan after pulling course content.
 
-6. **Quality gate (before a PR)** — matches [CI](.github/workflows/test.yml) (`eslint`, Vitest with coverage thresholds, production **web** build, **Electron** bundle build, Playwright **inventory** on Ubuntu):
+6. **Quality gate (before a PR)** — matches [CI](.github/workflows/test.yml) (`eslint`, Vitest with coverage thresholds, production **web** build, **Electron** bundle build, Playwright **inventory + interactions** on Ubuntu):
 
    ```bash
    npm run lint
@@ -184,7 +202,7 @@ Use this sequence when you first clone the repo or when you want to confirm ever
    npm run test:e2e:ci
    ```
 
-   For a quicker loop while coding, `npm test` (watch) or `npm test -- --run` skips the coverage threshold check. Full Playwright + screenshot baselines: `npm run test:e2e` (see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts)); refresh PNGs with `npm run test:e2e:update-snapshots`.
+   For a quicker loop while coding, `npm test` (watch) or `npm test -- --run` skips the coverage threshold check. Full Playwright + screenshot baselines: `npm run test:e2e` (see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts) and [e2e/functional/app-interactions.spec.ts](e2e/functional/app-interactions.spec.ts)); refresh PNGs with `npm run test:e2e:update-snapshots`.
 
 7. **Production-style desktop check** (catches wrong dev-server URL or stale build output)
 
@@ -195,14 +213,14 @@ Use this sequence when you first clone the repo or when you want to confirm ever
 
    If the window is blank, run `npm run electron:clean`, repeat step 7, and see **Problem 5** in [Electron troubleshooting](#electron-desktop-app--troubleshooting--ai-assisted-fixes).
 
-8. **Ship it** — Commit on a feature branch, push, and open a Pull Request to `main` (matches the Git workflow this app teaches).
+8. **Ship it (recommended)** — On **your fork**, use a short-lived feature branch, push, and open a **Pull Request** into `main` after CI is green—the same habit the app’s checklist reinforces. Upstream maintainers are encouraged to adopt the same PR-based integration for this repo (see [Git workflow: history, teaching, and next steps](#git-workflow-history-teaching-and-next-steps)).
 
 ---
 
 ## Running the App (quick start)
 
 ```bash
-cd ~/Desktop/platoon-companion
+cd ~/Desktop/githubbuddy
 npm install          # if you haven't already
 npm run dev          # starts Vite dev server at http://localhost:5173
 ```
@@ -270,15 +288,15 @@ The script will:
 
 Official GitHub guidance:
 
-- https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
-- https://docs.github.com/en/authentication/connecting-to-github-with-ssh
+- [Creating a personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+- [Connecting to GitHub with SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
 
 ### Option A – Run in the Browser (Recommended while learning the UI)
 
 ```bash
 # 1. Clone the repository (or download the zip)
-git clone https://github.com/YOUR_USERNAME/platoon-companion.git
-cd platoon-companion
+git clone https://github.com/YOUR_USERNAME/githubbuddy.git
+cd githubbuddy
 
 # 2. Install all dependencies (this also installs Electron for later)
 npm install
@@ -358,14 +376,14 @@ To ensure we are following current best practices, we consulted:
 
 We believe in testing early so the app stays reliable as we add features.
 
-**What we run today**
+### What we run today
 
 - `npm test` — Vitest watch mode for development
 - `npm run test:coverage` — same suite with V8 coverage; **must meet minimum thresholds** in [vitest.config.ts](vitest.config.ts) (CI runs this, not 100% gate — raise thresholds as coverage improves)
-- `npm run test:e2e:ci` — Playwright **visual inventory** only (fast on Linux CI; asserts every listed user-facing control is present — see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts))
+- `npm run test:e2e:ci` — Playwright **visual inventory** plus a small **interaction** suite (badge updates, empty state, checklist checkbox when guidance is active — see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts) and [e2e/functional/app-interactions.spec.ts](e2e/functional/app-interactions.spec.ts))
 - `npm run test:e2e` — full Playwright run including **full-page screenshot** comparisons (baselines are OS-specific; Chromium snapshots live next to [e2e/visual/screenshots.spec.ts](e2e/visual/screenshots.spec.ts))
 
-**Layers in this repo**
+### Layers in this repo
 
 1. **Unit tests** — Pure logic: day data (`days.ts`), command templates (`commandInterpolation.ts`), course scanning (`courseScanner.ts`), **upstream URL validation** (`upstreamRepoUrl.ts`), shell allowlisting (`electron/runShellCommand.ts`), preload-only disk helpers (`electron/courseContentScan.ts`, `electron/dayFocusLoader.ts`), storage helpers, clipboard wrapper, etc.
 
@@ -376,11 +394,11 @@ We believe in testing early so the app stays reliable as we add features.
    - [GuidancePanel.tsx](src/components/GuidancePanel.tsx), [StepCard.tsx](src/components/StepCard.tsx), [CommandOutput.tsx](src/components/CommandOutput.tsx), [ProgressTracker.tsx](src/components/ProgressTracker.tsx), [DayFocus.tsx](src/components/DayFocus.tsx), [Tooltip.tsx](src/components/Tooltip.tsx), toast layer ([ToastProvider.tsx](src/context/ToastProvider.tsx), [useToast.ts](src/context/useToast.ts))
    - Hooks [useDayGuidance](src/hooks/useDayGuidance.ts), [useDayFocus](src/hooks/useDayFocus.ts)
 
-3. **Playwright (browser)** — Visual **presence** coverage for the Vite app: header, day/workspace/upstream chrome, toast region, footer, and branch-specific UI (guidance checklist with seven steps, **Day focus** when `data/course-content` exists, **no-guidance** empty state for Week 3 Day 1, plus **Run** affordances when workspace is seeded via `e2e/storage/workspace-selected.json`). Does not launch Electron; **Fetch upstream** is desktop-only and is intentionally out of scope here.
+3. **Playwright (browser)** — Visual **presence** coverage for the Vite app (header, day/workspace/upstream chrome, toast region, footer, and branch-specific UI: guidance checklist with seven steps, **Day focus** when `data/course-content` exists, **no-guidance** for Week 3 Day 1, plus **Run** affordances when workspace is seeded via `e2e/storage/workspace-selected.json`). **Interaction smoke** tests cover selector-driven UI updates and checklist toggling when the guidance layout is active. Does not launch Electron; **Fetch upstream** is desktop-only and is intentionally out of scope here.
 
 4. **Electron entrypoints** (`electron/main.ts`, `electron/preload.ts`) — Not unit-tested in isolation; they are thin wiring layers. We rely on **production build** (`npm run electron:build`), **lint/typecheck**, and the [desktop smoke checklist](#desktop-smoke-checklist-manual) for those paths. **Fetch upstream** still validates URLs in the main process (same `resolveValidatedUpstreamUrl` helper) so the UI cannot be the only gate.
 
-**User edge cases we explicitly cover in tests**
+### User edge cases we explicitly cover in tests
 
 | Area                      | Examples                                                                                                                                                                                                                                                               |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -389,7 +407,7 @@ We believe in testing early so the app stays reliable as we add features.
 | **Errors & empty states** | Fetch failure / thrown IPC; missing guidance day; empty DayFocus file list; clipboard failures; command execution rejection.                                                                                                                                           |
 | **Course content**        | Browser vs Electron scan; missing `getCourseContentScan`; loader throws; `window` undefined (SSR-safe branch).                                                                                                                                                         |
 
-**What professional testers also watch for** (not all automated here yet)
+### What professional testers also watch for (not all automated here yet)
 
 - **Accessibility** — Keyboard order, labels, focus traps in modals (we use native `confirm`/`prompt` today), screen reader text for dynamic status.
 - **Environments** — Windows vs macOS paths, Electron vs pure browser (`npm run dev`), offline / auth failures for `git`/`gh`.
@@ -428,8 +446,8 @@ In v0.5 we upgraded the command execution from batch (`exec`) to real-time strea
 
 **Documentation followed:**
 
-- Node.js spawn: https://nodejs.org/api/child_process.html#child_processspawncommand-args-options
-- Electron IPC streaming: https://www.electronjs.org/docs/latest/tutorial/ipc
+- [Node.js `child_process.spawn`](https://nodejs.org/api/child_process.html#child_processspawncommand-args-options)
+- [Electron IPC tutorial](https://www.electronjs.org/docs/latest/tutorial/ipc)
 
 This makes longer commands (git clone, builds, tests) feel responsive.
 
@@ -457,15 +475,15 @@ We follow the official `electron-vite` + Electron security model:
 
 1. **Preload Script** (`electron/preload.ts`)
    - Uses `contextBridge` to safely expose two methods to the React app.
-   - Reference: https://www.electronjs.org/docs/latest/tutorial/context-isolation
+   - Reference: [Context isolation](https://www.electronjs.org/docs/latest/tutorial/context-isolation)
 
 2. **Main Process** (`electron/main.ts` + `electron/runShellCommand.ts`)
    - Handles IPC and runs commands with `child_process.spawn` (shell mode), allowlist checks, timeouts, and output caps.
-   - Reference: https://www.electronjs.org/docs/latest/api/ipc-main
+   - Reference: [ipcMain](https://www.electronjs.org/docs/latest/api/ipc-main)
 
 3. **Configuration** (`electron.vite.config.ts`)
    - Properly configured renderer with `rollupOptions.input: 'index.html'` because our project has the HTML file at the root (standard Vite layout).
-   - Reference: https://electron-vite.org/config/
+   - Reference: [electron-vite config](https://electron-vite.org/config/)
 
 4. **UI Layer**
    - `WorkspaceSelector` now uses the real native dialog.
@@ -519,8 +537,8 @@ If the clone is missing, the app shows a helpful message directing you to the RE
 
 **Documentation followed:**
 
-- Vite conditional logic: https://vitejs.dev/guide/ssr.html#conditional-logic
-- Electron filesystem access: https://www.electronjs.org/docs/latest/tutorial/sandbox#preload-scripts
+- [Vite: conditional logic](https://vitejs.dev/guide/ssr.html#conditional-logic)
+- [Electron sandbox and preload scripts](https://www.electronjs.org/docs/latest/tutorial/sandbox#preload-scripts)
 
 ### v0.3 – Running as a Real Desktop App (Completed)
 
@@ -571,7 +589,7 @@ The Platoon Companion desktop app is designed to run on both **Windows** and **m
 Students on Windows use the exact same commands:
 
 ```bash
-cd platoon-companion
+cd githubbuddy
 npm install
 npm run electron:dev
 ```
@@ -630,8 +648,8 @@ describe("getDayGuidance", () => {
 
 ### Test Execution Output (Proof)
 
-```
- RUN  v4.1.5 /Users/stephenmckitrick/Desktop/platoon-companion
+```text
+ RUN  v4.1.5 /Users/you/dev/githubbuddy
 
  ✓ src/data/days.test.ts > getDayGuidance > should return the Week 2 Day 4 guidance when requested  1ms
  ✓ src/data/days.test.ts > getDayGuidance > should return undefined for a day that has not been created yet  0ms
@@ -643,14 +661,16 @@ describe("getDayGuidance", () => {
    Duration  81ms (transform 15ms, setup 0ms, import 20ms, tests 1ms, environment 0ms)
 ```
 
-That sample output is from the first data-layer tests only. The suite now covers helpers, Electron modules, hooks, RTL component tests, and Playwright browser inventory; run `npm test -- --run` for the Vitest count and `npm run test:e2e:ci` for Playwright. **Continuous integration** runs `npm run lint`, `npm run test:coverage` (minimum thresholds in [vitest.config.ts](vitest.config.ts)), `npm run build`, and `npm run test:e2e:ci` — see [.github/workflows/test.yml](.github/workflows/test.yml).
+That sample output is from the first data-layer tests only. The suite now covers helpers, Electron modules, hooks, RTL component tests, and Playwright browser tests (inventory + interactions); run `npm test -- --run` for the Vitest count and `npm run test:e2e:ci` for Playwright. **Continuous integration** runs `npm run lint`, `npm run test:coverage` (minimum thresholds in [vitest.config.ts](vitest.config.ts)), `npm run build`, and `npm run test:e2e:ci` — see [.github/workflows/test.yml](.github/workflows/test.yml).
 
 ### Enabling Branch Protection (Required for Professional Workflow)
 
-Now that we have automated tests, we can protect the `main` branch so that:
+Branch protection is how this **upstream** repo can match the workflow the app teaches: after you enable it, routine work should show up as **PRs merged into `main`**, not only as linear commits from direct pushes.
+
+Now that CI exists, protect the `main` branch so that:
 
 - Every change must come through a Pull Request
-- Required **status checks** (from CI: lint, tests with coverage, build, Playwright inventory) must pass before merging is allowed
+- Required **status checks** (from CI: lint, tests with coverage, build, Playwright browser tests) must pass before merging is allowed
 
 **Step-by-step (with official documentation links):**
 
@@ -661,12 +681,12 @@ Now that we have automated tests, we can protect the `main` branch so that:
      → Documentation: [About protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-pull-request-reviews-before-merging)
 
    - **Require status checks to pass before merging**  
-     → Select **"Test / Lint, tests, coverage, build"** and **"Test / Playwright (visual inventory)"** (both from [.github/workflows/test.yml](.github/workflows/test.yml))  
+     → Select **"Test / Lint, tests, coverage, build"** and **"Test / Playwright (inventory + interactions)"** (both from [.github/workflows/test.yml](.github/workflows/test.yml))  
      → Documentation: [Require status checks before merging](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-status-checks-before-merging)
 
 3. Save the rule.
 
-After this is enabled, the only way code reaches `main` is through a reviewed, passing Pull Request — exactly the GitHub Flow we teach in the app.
+After this is enabled, the default path for code to reach `main` is a reviewed, passing Pull Request — the same GitHub Flow the app teaches. (Org admins may still bypass in emergencies; the goal is day-to-day PR discipline.)
 
 **Why this is the documented best practice**:
 
@@ -699,33 +719,37 @@ During the implementation of the desktop (Electron) version and the "Fetch Upstr
 
 ### Problem 1: Preload Script Fails with "Cannot use import statement outside a module"
 
-**Symptom**
+#### Symptom
 
-```
+```text
 Unable to load preload script: .../preload.mjs
 SyntaxError: Cannot use import statement outside a module
 ```
 
-**Root Cause**  
+#### Root Cause
+
 `sandbox: true` (the strongest isolation setting) is incompatible with ESM preload scripts produced by `electron-vite`.
 
-**Fix**  
+#### Fix
+
 Changed `sandbox: true` → `sandbox: false` in `createWindow()` while keeping `contextIsolation: true` and `nodeIntegration: false`. This is the documented secure configuration when using ESM preload.
 
 ### Problem 2: Persistent "Insecure Content-Security-Policy" Warning
 
-**Symptom**
+#### Symptom
 
-```
+```text
 Electron Security Warning (Insecure Content-Security-Policy)
 This renderer process has either no Content Security Policy set
 or a policy with "unsafe-eval" enabled.
 ```
 
-**Root Cause**  
+#### Root Cause
+
 A `<meta http-equiv="Content-Security-Policy">` tag in `index.html` is often ignored or overridden when Electron loads the page via `loadURL`.
 
-**Fix**  
+#### Fix
+
 Injected the CSP header programmatically from the main process using:
 
 ```ts
@@ -747,20 +771,21 @@ This is the officially recommended approach in the Electron security documentati
 
 ### Problem 3: Blank White Window – React App Never Renders
 
-**Symptom**
+#### Symptom
 
 - Terminal shows `[Main] did-finish-load`
 - DevTools shows only the preload log and CSP warning
 - No React components, no `[Renderer]` logs, `#root` remains empty
 
-**Root Cause**  
+#### Root Cause
+
 Multiple interacting issues:
 
 - **electron-vite** defaults the renderer Vite `root` to `./src/renderer`. This project keeps `index.html` at the **repository root**, so the dev server was serving the wrong tree — diagnostics showed `React entry script tag found in DOM: false` because the loaded HTML was not the real app shell.
 - The dev server can still be racing Electron on first connect.
 - Missing or misconfigured tooling made renderer errors hard to see.
 
-**Fixes Applied**
+#### Fixes applied
 
 - Set `renderer.root` to the project root and `rollupOptions.input` to an absolute `index.html` in `electron.vite.config.ts`; aligned `server.port` / `strictPort` with `vite.config.ts`.
 - Kept `vite-plugin-electron-renderer` (`renderer()` plugin) for Electron-friendly renderer bundling.
@@ -770,28 +795,29 @@ Multiple interacting issues:
 
 ### Problem 4: VITE_DEV_SERVER_URL Is Undefined
 
-**Symptom**
+#### Symptom
 
-```
+```text
 [Main] VITE_DEV_SERVER_URL: undefined
 [Main] VITE_DEV_SERVER_URL not set, falling back to http://localhost:5173
 ```
 
-**Explanation**  
+#### Explanation
+
 `electron-vite` only injects this environment variable under certain conditions. The fallback to a hardcoded port works, but a small startup delay is still required.
 
 ### Problem 5: Production / Preview Window Is Blank (White Screen)
 
-**Symptom**
+#### Symptom
 
 - After `npm run electron:build`, opening the app shows an empty white window (no header, no React UI).
 
-**Root causes we fixed**
+#### Root causes we fixed
 
 1. **Wrong path to `index.html`:** The main bundle lives at `dist-electron/main/main.js`. A relative path `../out/renderer/index.html` points under `dist-electron/out/...`, which does **not** exist. The electron-vite renderer output is at the **project root** `out/renderer/`, so the correct relative path is **`../../out/renderer/index.html`**.
 2. **Treating every unpackaged run as “dev”:** Using `isDev = !app.isPackaged` made a post-build `electron .` try to load `http://localhost:5173` even when the Vite dev server was off. Production-style runs must use `loadFile` with the built `out/renderer/index.html`.
 
-**Fixes / workflow**
+#### Fixes / workflow
 
 - `resolveProductionIndexHtml()` tries `../../out/renderer/index.html` first, then other candidates.
 - `shouldLoadDevServer()` is `true` only when unpackaged **and** (`NODE_ENV === 'development'` or `VITE_DEV_SERVER_URL` is set).

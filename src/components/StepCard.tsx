@@ -62,6 +62,7 @@ export const StepCard: React.FC<StepCardProps> = ({
     output: string;
     error?: string;
     success: boolean;
+    exitCode?: number | null;
   } | null>(null);
 
   const isComment = resolvedCommand.trim().startsWith("#");
@@ -136,6 +137,7 @@ export const StepCard: React.FC<StepCardProps> = ({
         output: result.output || "",
         error: result.error,
         success: result.success,
+        exitCode: result.exitCode,
       });
       setIsRunning(false);
       cleanupOutput?.();
@@ -154,6 +156,7 @@ export const StepCard: React.FC<StepCardProps> = ({
         output: liveOutput,
         error: message,
         success: false,
+        exitCode: null,
       });
       setIsRunning(false);
       cleanupOutput?.();
@@ -231,6 +234,7 @@ export const StepCard: React.FC<StepCardProps> = ({
           output={commandResult.output}
           error={commandResult.error}
           success={commandResult.success}
+          exitCode={commandResult.exitCode}
         />
       )}
 
