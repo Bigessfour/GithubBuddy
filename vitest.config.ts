@@ -26,6 +26,7 @@ export default defineConfig({
       exclude: [
         "**/*.test.{ts,tsx}",
         "**/src/test/**",
+        "**/* 2",
         "**/* 2.*",
         "src/types/electron.d.ts",
         "src/types/index.ts",
