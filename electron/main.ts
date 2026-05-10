@@ -13,13 +13,13 @@
  * Safety measures implemented in v0.4:
  * - We always receive the full command and working directory from the renderer.
  * - The UI (StepCard) will show a preview + confirmation before calling this.
- * - We use `child_process.exec` with an explicit `cwd` option.
+ * - We use `child_process.spawn` with an explicit `cwd` and no shell.
  * - We return structured results instead of throwing, so the UI can display errors nicely.
  *
  * Official documentation links:
  * - IPC Main: https://www.electronjs.org/docs/latest/api/ipc-main
  * - dialog.showOpenDialog: https://www.electronjs.org/docs/latest/api/dialog#dialogshowopendialogoptions
- * - child_process.exec: https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback
+ * - child_process.spawn: https://nodejs.org/api/child_process.html#child_processspawnfile-args-options
  * - Security Best Practices: https://www.electronjs.org/docs/latest/tutorial/security
  */
 
@@ -452,6 +452,48 @@ ipcMain.handle(
  * - Explicit cwd
  * - Preview + confirmation still happens in the UI
  */
+function resolveExecuteCommandCwd(
+  cwd: string,
+):
+  | { ok: true; resolved: string }
+  | { ok: false; message: string } {
+  if (!cwd || typeof cwd !== "string" || !cwd.trim()) {
+    return {
+      ok: false,
+      message:
+        "Workspace folder is missing or invalid. Choose a folder that exists on disk.",
+    };
+  }
+  const resolved = path.resolve(cwd.trim());
+  let realpath: string;
+  try {
+    realpath = fs.realpathSync(resolved);
+  } catch {
+    return {
+      ok: false,
+      message:
+        "Workspace folder does not exist or is not reachable. Choose an existing folder on disk.",
+    };
+  }
+  let st: fs.Stats;
+  try {
+    st = fs.statSync(realpath);
+  } catch {
+    return {
+      ok: false,
+      message:
+        "Workspace folder is missing or invalid. Choose a folder that exists on disk.",
+    };
+  }
+  if (!st.isDirectory()) {
+    return {
+      ok: false,
+      message: "Workspace path must be a directory.",
+    };
+  }
+  return { ok: true, resolved: realpath };
+}
+
 ipcMain.handle(
   "execute-command",
   async (event, command: string, cwd: string) => {
@@ -461,21 +503,28 @@ ipcMain.handle(
       command,
     });
 
-    if (!cwd || !fs.existsSync(cwd)) {
-      const err =
-        "Workspace folder is missing or invalid. Choose a folder that exists on disk.";
-      writeAppLog("warn", "IPC", "execute-command rejected", { cwd, err });
+    const cwdResult = resolveExecuteCommandCwd(cwd);
+    if (!cwdResult.ok) {
+      writeAppLog("warn", "IPC", "execute-command rejected", {
+        cwd,
+        err: cwdResult.message,
+      });
       event.sender.send("command-complete", {
         success: false,
         output: "",
-        error: err,
+        error: cwdResult.message,
         exitCode: -1,
       });
-      return { success: false, output: "", error: err, exitCode: -1 };
+      return {
+        success: false,
+        output: "",
+        error: cwdResult.message,
+        exitCode: -1,
+      };
     }
 
     try {
-      const result = await runShellCommand(command, cwd, {
+      const result = await runShellCommand(command, cwdResult.resolved, {
         onChunk: (chunk) => event.sender.send("command-output", chunk),
       });
 

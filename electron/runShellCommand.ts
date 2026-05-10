@@ -1,6 +1,6 @@
 /**
- * Trusted-student-tool execution wrapper: spawn via shell with cwd, allowlist, caps, and timeout.
- * Extracted for unit testing without Electron.
+ * Trusted-student-tool execution: spawn without a shell, allowlist, pipeline
+ * semantics (&& / || / ; / newline), caps, and timeout.
  */
 
 import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
@@ -22,22 +22,34 @@ export const ALLOWED_COMMAND_PREFIXES = [
   "echo ",
 ] as const;
 
+const ALLOWED_BINARIES = new Set(
+  ALLOWED_COMMAND_PREFIXES.map((p) => p.trimEnd().toLowerCase()),
+);
+
 export type OutputChunk = { type: "stdout" | "stderr"; data: string };
+
+/** How a segment is chained to the next (null = last segment). */
+export type PipelineSeparator = "&&" | "||" | ";" | "newline";
+
+export type PipelineStep = {
+  segment: string;
+  next: PipelineSeparator | null;
+};
 
 /**
  * Split on &&, ||, ;, or newlines outside of quoted regions (double or single).
- * Keeps `gh ... --body "a;b"` as one segment.
+ * Records the operator after each segment for shell-like short-circuit behavior.
  */
-export function splitCommandSegments(command: string): string[] {
-  const segments: string[] = [];
+export function parseCommandPipeline(command: string): PipelineStep[] {
+  const steps: PipelineStep[] = [];
   let current = "";
   let inDouble = false;
   let inSingle = false;
   let i = 0;
 
-  const pushCurrent = () => {
+  const pushCurrent = (next: PipelineSeparator | null) => {
     const t = current.trim();
-    if (t.length > 0) segments.push(t);
+    if (t.length > 0) steps.push({ segment: t, next });
     current = "";
   };
 
@@ -65,23 +77,23 @@ export function splitCommandSegments(command: string): string[] {
 
     if (!inDouble && !inSingle) {
       if (c === "\n") {
-        pushCurrent();
+        pushCurrent("newline");
         i++;
         continue;
       }
       if (c === ";") {
-        pushCurrent();
+        pushCurrent(";");
         i++;
         continue;
       }
       const rest = command.slice(i);
       if (rest.startsWith("&&")) {
-        pushCurrent();
+        pushCurrent("&&");
         i += 2;
         continue;
       }
       if (rest.startsWith("||")) {
-        pushCurrent();
+        pushCurrent("||");
         i += 2;
         continue;
       }
@@ -91,8 +103,85 @@ export function splitCommandSegments(command: string): string[] {
     i++;
   }
 
-  pushCurrent();
-  return segments;
+  pushCurrent(null);
+  return steps;
+}
+
+/**
+ * Split on &&, ||, ;, or newlines outside of quoted regions (double or single).
+ * Keeps `gh ... --body "a;b"` as one segment.
+ */
+export function splitCommandSegments(command: string): string[] {
+  return parseCommandPipeline(command).map((p) => p.segment);
+}
+
+/**
+ * Parse one pipeline segment into argv (POSIX-like quoting). Does not invoke a shell.
+ */
+export function parseShellArgv(segment: string): string[] {
+  const args: string[] = [];
+  let i = 0;
+  const input = segment;
+  const len = input.length;
+
+  const skipSpace = () => {
+    while (i < len && /\s/.test(input[i]!)) i++;
+  };
+
+  while (i < len) {
+    skipSpace();
+    if (i >= len) break;
+
+    const c = input[i]!;
+
+    if (c === '"') {
+      i++;
+      let s = "";
+      while (i < len) {
+        if (input[i] === "\\" && i + 1 < len) {
+          s += input[i + 1]!;
+          i += 2;
+          continue;
+        }
+        if (input[i] === '"') {
+          i++;
+          break;
+        }
+        s += input[i]!;
+        i++;
+      }
+      args.push(s);
+      continue;
+    }
+
+    if (c === "'") {
+      i++;
+      let s = "";
+      while (i < len) {
+        if (input[i] === "'") {
+          i++;
+          break;
+        }
+        s += input[i]!;
+        i++;
+      }
+      args.push(s);
+      continue;
+    }
+
+    let s = "";
+    while (i < len && !/\s/.test(input[i]!)) {
+      s += input[i]!;
+      i++;
+    }
+    args.push(s);
+  }
+
+  return args;
+}
+
+export function isAllowedBinary(name: string): boolean {
+  return ALLOWED_BINARIES.has(name.toLowerCase());
 }
 
 export function assertCommandAllowed(command: string): void {
@@ -126,9 +215,53 @@ export type RunShellCommandResult = {
   timedOut?: boolean;
 };
 
+function runOneSpawn(
+  file: string,
+  args: string[],
+  cwd: string,
+  stdoutBuf: { value: string },
+  stderrBuf: { value: string },
+  onChunk: (chunk: OutputChunk) => void,
+  onSpawn: (child: ChildProcessWithoutNullStreams) => void,
+): Promise<{ exitCode: number | null }> {
+  return new Promise((resolve) => {
+    const child: ChildProcessWithoutNullStreams = spawn(file, args, {
+      cwd,
+      shell: false,
+      windowsHide: true,
+    });
+    onSpawn(child);
+
+    child.stdout.on("data", (data: Buffer) => {
+      const s = data.toString();
+      appendCapped(stdoutBuf, s);
+      onChunk({ type: "stdout", data: s });
+    });
+
+    child.stderr.on("data", (data: Buffer) => {
+      const s = data.toString();
+      appendCapped(stderrBuf, s);
+      onChunk({ type: "stderr", data: s });
+    });
+
+    child.on("close", (code) => {
+      resolve({ exitCode: code });
+    });
+
+    child.on("error", (err) => {
+      const msg = err.message;
+      appendCapped(stderrBuf, msg);
+      onChunk({ type: "stderr", data: msg });
+      resolve({ exitCode: null });
+    });
+  });
+}
+
 /**
- * Runs a shell command in `cwd`, streaming chunks via `onChunk`.
- * Enforces allowlist, timeout (SIGTERM), and captured output caps.
+ * Runs an allowlisted command in `cwd` without `shell: true`, streaming chunks via `onChunk`.
+ * Chained segments use `&&`, `||`, `;`, and newline like a shell (newline and `;` always continue).
+ *
+ * Throws synchronously if the command fails the allowlist (so callers can use try/catch or `.catch`).
  */
 export function runShellCommand(
   command: string,
@@ -139,69 +272,116 @@ export function runShellCommand(
   },
 ): Promise<RunShellCommandResult> {
   assertCommandAllowed(command);
+  return runShellCommandPipeline(command, cwd, options);
+}
+
+async function runShellCommandPipeline(
+  command: string,
+  cwd: string,
+  options: {
+    onChunk: (chunk: OutputChunk) => void;
+    timeoutMs?: number;
+  },
+): Promise<RunShellCommandResult> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_COMMAND_TIMEOUT_MS;
+  const steps = parseCommandPipeline(command);
 
-  return new Promise((resolve) => {
-    const stdoutBuf = { value: "" };
-    const stderrBuf = { value: "" };
-    let settled = false;
+  const stdoutBuf = { value: "" };
+  const stderrBuf = { value: "" };
 
-    const timerRef: { id: ReturnType<typeof setTimeout> | null } = { id: null };
+  let activeChild: ChildProcessWithoutNullStreams | null = null;
+  let timedOutFlag = false;
 
-    const finish = (result: RunShellCommandResult) => {
-      if (settled) return;
-      settled = true;
-      if (timerRef.id !== null) clearTimeout(timerRef.id);
-      resolve(result);
-    };
+  const killTimer = setTimeout(() => {
+    timedOutFlag = true;
+    activeChild?.kill("SIGTERM");
+  }, timeoutMs);
 
-    const child: ChildProcessWithoutNullStreams = spawn(command, {
-      shell: true,
-      cwd,
-      windowsHide: true,
-    });
+  const clearKillTimer = () => {
+    clearTimeout(killTimer);
+  };
 
-    timerRef.id = setTimeout(() => {
-      child.kill("SIGTERM");
-      finish({
-        success: false,
-        output: stdoutBuf.value,
-        error:
-          (stderrBuf.value ? `${stderrBuf.value}\n` : "") + "Command timed out",
-        exitCode: null,
-        timedOut: true,
-      });
-    }, timeoutMs);
+  try {
+    for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
+      const { segment, next } = steps[stepIndex]!;
+      const argv = parseShellArgv(segment);
+      if (argv.length === 0) continue;
 
-    child.stdout.on("data", (data: Buffer) => {
-      const s = data.toString();
-      appendCapped(stdoutBuf, s);
-      options.onChunk({ type: "stdout", data: s });
-    });
+      const bin = argv[0]!;
+      if (!isAllowedBinary(bin)) {
+        throw new Error(
+          `Command blocked by allowlist. Disallowed program: ${bin}`,
+        );
+      }
 
-    child.stderr.on("data", (data: Buffer) => {
-      const s = data.toString();
-      appendCapped(stderrBuf, s);
-      options.onChunk({ type: "stderr", data: s });
-    });
+      const result = await runOneSpawn(
+        bin,
+        argv.slice(1),
+        cwd,
+        stdoutBuf,
+        stderrBuf,
+        options.onChunk,
+        (c) => {
+          activeChild = c;
+        },
+      );
+      activeChild = null;
 
-    child.on("close", (code) => {
+      if (timedOutFlag) {
+        return {
+          success: false,
+          output: stdoutBuf.value,
+          error:
+            (stderrBuf.value ? `${stderrBuf.value}\n` : "") + "Command timed out",
+          exitCode: null,
+          timedOut: true,
+        };
+      }
+
+      const code = result.exitCode;
       const success = code === 0;
-      finish({
-        success,
-        output: stdoutBuf.value,
-        error: stderrBuf.value || undefined,
-        exitCode: code,
-      });
-    });
 
-    child.on("error", (err) => {
-      finish({
-        success: false,
-        output: stdoutBuf.value,
-        error: err.message,
-        exitCode: null,
-      });
-    });
-  });
+      if (next === null) {
+        return {
+          success,
+          output: stdoutBuf.value,
+          error: stderrBuf.value || undefined,
+          exitCode: code,
+        };
+      }
+      if (next === "&&" && code !== 0) {
+        return {
+          success: false,
+          output: stdoutBuf.value,
+          error: stderrBuf.value || undefined,
+          exitCode: code,
+        };
+      }
+      if (next === "||" && code === 0) {
+        return {
+          success: true,
+          output: stdoutBuf.value,
+          error: stderrBuf.value || undefined,
+          exitCode: code,
+        };
+      }
+    }
+
+    return {
+      success: true,
+      output: stdoutBuf.value,
+      error: stderrBuf.value || undefined,
+      exitCode: 0,
+    };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return {
+      success: false,
+      output: stdoutBuf.value,
+      error: message,
+      exitCode: null,
+    };
+  } finally {
+    clearKillTimer();
+  }
 }
