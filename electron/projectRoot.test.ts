@@ -11,6 +11,6 @@ describe("getAppProjectRoot", () => {
     const root = getAppProjectRoot();
     const raw = fs.readFileSync(path.join(root, "package.json"), "utf8");
     const pkg = JSON.parse(raw) as { name?: string };
-    expect(pkg.name).toBe("platoon-companion");
+    expect(pkg.name).toBe("githubbuddy");
   });
 });

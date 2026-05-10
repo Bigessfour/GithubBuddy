@@ -22,7 +22,7 @@ describe("appLog", () => {
     window.electronAPI = { writeLog } as unknown as NonNullable<
       Window["electronAPI"]
     >;
-    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     appLog("warn", "X", "y", { n: 1 });
     expect(writeLog).toHaveBeenCalledWith({
       level: "warn",
@@ -30,8 +30,8 @@ describe("appLog", () => {
       message: "y",
       meta: { n: 1 },
     });
-    expect(log).toHaveBeenCalledWith("[X] y", '{"n":1}');
-    log.mockRestore();
+    expect(warn).toHaveBeenCalledWith("[X] y", '{"n":1}');
+    warn.mockRestore();
   });
 
   it("uses console.warn and console.error for levels", () => {
