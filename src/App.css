@@ -441,6 +441,22 @@
   font-family: var(--mono);
 }
 
+.course-content-missing-hint {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+}
+
+.course-content-missing-hint code {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
 .hint {
   margin-top: 12px;
   font-size: 14px;

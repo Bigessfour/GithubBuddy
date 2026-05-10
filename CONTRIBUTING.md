@@ -16,19 +16,19 @@ This project is under the [MIT License](LICENSE). By contributing, you agree you
 
 Course staff: upstream may still be aligning day-to-day practice with this workflow; students should still follow the steps above on **their forks**.
 
+Maintainers: protect `main` with a [branch ruleset](.github/RULESET_MAIN.md) (recommended) and/or [classic branch protection](.github/BRANCH_PROTECTION.md). Opening a PR will use [.github/pull_request_template.md](.github/pull_request_template.md) when GitHub is configured to show templates.
+
 ## Before you open a PR
 
 ```bash
 npm install
-# If npm reports a peer dependency conflict (Vite 8 vs electron-vite), use:
-# npm install --legacy-peer-deps
 # Node 22.12+ required (see package.json engines). Do not use --ignore-scripts;
 # if Electron fails to start, run: npm run electron:install
 npm run lint
 npm test -- --run
 ```
 
-CI uses `npm ci --legacy-peer-deps` for the same reason—see [INSTALL.md](INSTALL.md).
+CI uses `npm ci` (same lockfile as local installs)—see [INSTALL.md](INSTALL.md).
 
 If you change UI or Electron behavior that e2e covers, also run:
 
@@ -51,7 +51,7 @@ Then on GitHub: **Releases → Draft a new release**, choose tag `v0.6.0`, add r
 
 ## Branch protection (maintainers)
 
-Until **branch protection** is enabled on `main`, merges are not mechanically enforced to go through PRs. Turn it on in GitHub (**Settings → Branches**) so required checks (including Playwright) must pass—see **Enabling Branch Protection** in [README.md](README.md#enabling-branch-protection-required-for-professional-workflow).
+Until **`main` is protected** (ruleset and/or branch protection), merges are not mechanically enforced to go through PRs. Use **Settings → Rules → Rulesets** (see [.github/RULESET_MAIN.md](.github/RULESET_MAIN.md)) or **Settings → Branches** so required checks (including Playwright) must pass—see **Enabling Branch Protection** in [README.md](README.md#enabling-branch-protection-required-for-professional-workflow).
 
 ## `.cursor/` in this repository
 

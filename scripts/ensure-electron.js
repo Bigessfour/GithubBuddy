@@ -59,7 +59,7 @@ function runElectronInstall() {
 
 if (!fs.existsSync(electronDir)) {
   console.error(
-    "[ensure-electron] node_modules/electron not found. Run `npm install` (use `npm install --legacy-peer-deps` if npm reports peer conflicts).",
+    "[ensure-electron] node_modules/electron not found. Run `npm install` from the project root.",
   );
   process.exit(1);
 }

@@ -26,13 +26,7 @@ Use your fork URL or the cohort remote you were given.
 npm install
 ```
 
-If npm reports a peer dependency conflict between `electron-vite` and Vite 8:
-
-```bash
-npm install --legacy-peer-deps
-```
-
-The same resolution is used in **GitHub Actions** (`npm ci --legacy-peer-deps` in [.github/workflows/test.yml](.github/workflows/test.yml)), so CI matches a typical local install.
+CI uses plain `npm ci` (see [.github/workflows/test.yml](.github/workflows/test.yml)) — no `--legacy-peer-deps` flag required. The stack uses **electron-vite 6.x** (declares Vite 8 in its peer range) plus an explicit **`esbuild`** devDependency so `vite-plugin-electron-renderer` resolves cleanly under npm.
 
 `postinstall` runs **`scripts/ensure-electron.js`** (downloads the Electron binary if `node_modules/electron/path.txt` is missing — avoids `Error: Electron uninstall` from electron-vite) and then the course setup helper (`setup-course`). Follow any prompts, or run explicitly:
 
@@ -44,6 +38,13 @@ npm run setup-course
 Never use `npm install --ignore-scripts` for this project unless you run `npm run electron:install` afterward.
 
 For dynamic **Day focus** content, you need the course materials under `data/course-content/aico-echo` (see README → v0.6 / setup-course).
+
+### If Day focus or the week/day list looks “empty”
+
+- **Expected path on disk:** `data/course-content/aico-echo` (under your **GithubBuddy** clone), populated with the cohort course repo (`aico-echo` or the URL your instructor gives).
+- **Desktop app:** Use **Fetch upstream** in the “Choose your day” section (HTTPS private repos often need [GitHub CLI](https://cli.github.com/) sign-in when `git` prompts for auth).
+- **CLI:** From the project root, run `npm run setup-course` and follow prompts, or clone manually into `data/course-content/aico-echo`.
+- Until that folder exists, the app still shows the **guided checklist** (Week 2, etc.), but not the full per-day markdown **Course materials** panel.
 
 ## 3. Choose how you run the app
 

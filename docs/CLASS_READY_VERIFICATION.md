@@ -52,7 +52,7 @@ Set via `gh repo edit` (2026-05-10). Snapshot from `gh repo view Bigessfour/Gith
 }
 ```
 
-## 4. Branch protection on `main`
+## 4. Branch protection / ruleset on `main`
 
 **Required status checks** (strict: updates must be current before merge):
 
@@ -63,7 +63,7 @@ Configured with:
 
 `PUT /repos/Bigessfour/GithubBuddy/branches/main/protection`
 
-**Note:** This classic rule requires the above checks to pass for protected merges; it does **not** by itself force “open a PR for every change” for a solo owner direct-push workflow. For full GitHub Flow, also enable **“Require a pull request before merging”** in the UI (or a ruleset) if you want to block direct pushes to `main`.
+**Note:** This classic rule requires the above checks to pass for protected merges; it does **not** by itself force “open a PR for every change” for a solo owner direct-push workflow. For full GitHub Flow, also enable **“Require a pull request before merging”** in the UI (or use a **branch ruleset**). A ready-made checklist for a common-sense ruleset on `main` lives in [.github/RULESET_MAIN.md](../.github/RULESET_MAIN.md) (see GitHub’s [About rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)).
 
 ## 5. Git tag and GitHub Release (`v0.6.0`)
 

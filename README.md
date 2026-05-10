@@ -172,12 +172,6 @@ Use this sequence when you first clone the repo or when you want to confirm ever
    npm install
    ```
 
-   If npm reports a peer dependency conflict between `electron-vite` and Vite 8, install with:
-
-   ```bash
-   npm install --legacy-peer-deps
-   ```
-
 3. **Course content (required for dynamic day focus)** — Run the guided setup once (or ensure the clone exists at the path the app expects):
 
    ```bash
@@ -279,6 +273,8 @@ GithubBuddy can be run in two ways:
 - For desktop: nothing extra needed — Electron downloads its own binaries on first run
 
 ### Getting the Course Content (Required for v0.6 Dynamic Focus)
+
+Without `data/course-content/aico-echo`, you still get the **in-app checklist** and copyable commands; you only miss the **Course materials** panel (full README / lesson markdown per day) and dynamic week/day dropdowns driven by the clone. See [INSTALL.md](INSTALL.md) → *If Day focus or the week/day list looks “empty”* for the short troubleshooting path.
 
 To enable the app to load the actual lesson, lab, and challenge content from the upstream repo, run:
 
@@ -487,7 +483,7 @@ We follow the official `electron-vite` + Electron security model:
    - Reference: [Context isolation](https://www.electronjs.org/docs/latest/tutorial/context-isolation)
 
 2. **Main Process** (`electron/main.ts` + `electron/runShellCommand.ts`)
-   - Handles IPC and runs commands with `child_process.spawn` (shell mode), allowlist checks, timeouts, and output caps.
+   - Handles IPC and runs commands with `child_process.spawn` (no shell; argv array), allowlist checks, timeouts, and output caps.
    - Reference: [ipcMain](https://www.electronjs.org/docs/latest/api/ipc-main)
 
 3. **Configuration** (`electron.vite.config.ts`)
@@ -521,7 +517,7 @@ We follow the official `electron-vite` + Electron security model:
 - [Context Isolation & Preload Scripts](https://www.electronjs.org/docs/latest/tutorial/context-isolation)
 - [IPC (Renderer ↔ Main)](https://www.electronjs.org/docs/latest/tutorial/ipc)
 - [dialog.showOpenDialog](https://www.electronjs.org/docs/latest/api/dialog)
-- [child_process.spawn](https://nodejs.org/api/child_process.html#child_processspawncommand-args-options)
+- [child_process.spawn](https://nodejs.org/api/child_process.html#child_processspawnfile-args-options)
 - [Security Best Practices](https://www.electronjs.org/docs/latest/tutorial/security)
 
 ### v0.6 – Dynamic Day Focus from Upstream Repo (Completed)
@@ -543,7 +539,7 @@ git clone https://github.com/CodePlatoon/aico-echo.git data/course-content/aico-
 
 When the local clone is present, the DaySelector shows “full day focus loaded”.
 
-If the clone is missing, the app shows a helpful message directing you to the README instructions.
+If the clone is missing, the desktop app shows a short note under **Choose your day** and [INSTALL.md](INSTALL.md) documents the exact folder path and `setup-course` / **Fetch upstream** flow.
 
 **Documentation followed:**
 
@@ -682,7 +678,9 @@ Now that CI exists, protect the `main` branch so that:
 - Every change must come through a Pull Request
 - Required **status checks** (from CI: lint, tests with coverage, build, Playwright browser tests) must pass before merging is allowed
 
-**Step-by-step (with official documentation links):**
+**Recommended:** configure a **branch ruleset** on `main` (required PRs, required checks, block force-push). This repo includes a copy-paste checklist in [.github/RULESET_MAIN.md](.github/RULESET_MAIN.md), aligned with GitHub’s [About rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets). Rulesets layer with classic protection and are easy for students to read without admin access.
+
+**Alternative — classic branch protection (with official documentation links):**
 
 1. Go to your repository → **Settings** → **Branches** → **Branch protection rules** → **Add rule** for the branch `main`.
 
@@ -691,7 +689,7 @@ Now that CI exists, protect the `main` branch so that:
      → Documentation: [About protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-pull-request-reviews-before-merging)
 
    - **Require status checks to pass before merging**  
-     → Select **"Test / Lint, tests, coverage, build"** and **"Test / Playwright (inventory + interactions)"** (both from [.github/workflows/test.yml](.github/workflows/test.yml))  
+     → Select **`Lint, tests, coverage, web + electron build`** and **`Playwright (inventory + interactions)`** (job `name:` values from [.github/workflows/test.yml](.github/workflows/test.yml); GitHub may prefix them with the workflow name, e.g. `Test / …`)  
      → Documentation: [Require status checks before merging](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-status-checks-before-merging)
 
 3. Save the rule.
@@ -708,6 +706,7 @@ References:
 
 - [GitHub Flow](https://docs.github.com/en/get-started/quickstart/github-flow)
 - [About branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches)
+- [About rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
 
 ---
 
@@ -749,7 +748,7 @@ From the project root:
 npm run electron:install
 ```
 
-Or reinstall: `rm -rf node_modules && npm ci --legacy-peer-deps` (see [INSTALL.md](INSTALL.md)). `postinstall` runs the same ensure step automatically on a normal install.
+Or reinstall: `rm -rf node_modules && npm ci` (see [INSTALL.md](INSTALL.md)). `postinstall` runs the same ensure step automatically on a normal install.
 
 ### Problem 1: Preload Script Fails with "Cannot use import statement outside a module"
 

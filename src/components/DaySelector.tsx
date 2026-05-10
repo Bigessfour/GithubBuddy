@@ -251,6 +251,17 @@ export function DaySelector({
         </p>
       )}
 
+      {isElectron && !usingLocalContent && !courseLayoutMismatch && (
+        <p className="course-content-missing-hint" role="note">
+          No course materials at <code>data/course-content/aico-echo</code> yet —
+          the <strong>Course materials</strong> view and dynamic week/day lists
+          need that folder. Run <code>npm run setup-course</code> in your
+          GithubBuddy clone, or use <strong>Fetch upstream</strong> below
+          (private HTTPS repos may open <code>gh</code> sign-in). See{" "}
+          <strong>INSTALL.md</strong> in this repo for details.
+        </p>
+      )}
+
       {isElectron && courseLayoutMismatch && (
         <div
           className="course-layout-alert"

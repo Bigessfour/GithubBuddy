@@ -1,0 +1,3 @@
+# Default owner for review (adjust to your org or remove if unused).
+# GitHub only notifies owners when branch protection requires CODEOWNERS review.
+* @Bigessfour
