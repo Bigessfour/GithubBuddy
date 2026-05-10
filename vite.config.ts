@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 /**
  * Vite Configuration (Cross-Platform Desktop App)
@@ -23,5 +23,10 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true, // Fail if port 5173 is busy instead of picking another port
+    // Matches electron-vite renderer: enables crossOriginIsolated + SharedArrayBuffer in dev
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
   },
-})
+});

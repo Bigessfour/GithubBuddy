@@ -1,5 +1,8 @@
-import { useMemo } from 'react';
-import { loadDayFocus, type DayFocusContent } from '../utils/courseContentLoader';
+import { useMemo } from "react";
+import {
+  loadDayFocus,
+  type DayFocusContent,
+} from "../utils/courseContentLoader";
 
 /**
  * Custom Hook: useDayFocus (v0.6)

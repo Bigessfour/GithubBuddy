@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 /**
  * CommandOutput Component – v0.4
@@ -35,9 +35,9 @@ export const CommandOutput: React.FC<CommandOutputProps> = ({
   if (!output && !error) return null;
 
   return (
-    <div className={`command-output ${success ? 'success' : 'error'}`}>
+    <div className={`command-output ${success ? "success" : "error"}`}>
       <div className="command-output-header">
-        {success ? '✓ Command completed successfully' : '✗ Command failed'}
+        {success ? "✓ Command completed successfully" : "✗ Command failed"}
       </div>
 
       {output && (

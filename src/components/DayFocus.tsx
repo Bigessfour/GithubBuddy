@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type { DayFocusContent } from '../utils/courseContentLoader';
+import React, { useState } from "react";
+import type { DayFocusContent } from "../utils/courseContentLoader";
 
 /**
  * DayFocus Component – v0.6
@@ -27,8 +27,12 @@ export const DayFocus: React.FC<DayFocusProps> = ({ focus }) => {
   return (
     <div className="day-focus">
       <div className="day-focus-header">
-        <h2>Week {focus.week} Day {focus.day} – Course Materials</h2>
-        <p className="day-focus-subtitle">Loaded from your local upstream repo clone</p>
+        <h2>
+          Week {focus.week} Day {focus.day} – Course Materials
+        </h2>
+        <p className="day-focus-subtitle">
+          Loaded from your local upstream repo clone
+        </p>
       </div>
 
       {/* File tabs */}
@@ -37,7 +41,7 @@ export const DayFocus: React.FC<DayFocusProps> = ({ focus }) => {
           {focus.files.map((file, index) => (
             <button
               key={index}
-              className={`file-tab ${index === activeFileIndex ? 'active' : ''}`}
+              className={`file-tab ${index === activeFileIndex ? "active" : ""}`}
               onClick={() => setActiveFileIndex(index)}
             >
               {file.name}

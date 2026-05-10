@@ -1,32 +1,54 @@
-/**
- * Tests for v0.6 Course Content Loader
- *
- * Verifies that the loader returns the correct shape and gracefully handles
- * browser mode (no local clone).
- *
- * Documentation: https://vitejs.dev/guide/ssr.html#conditional-logic
- */
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { loadDayFocus } from "./courseContentLoader";
 
-import { describe, it, expect } from 'vitest';
-import { loadDayFocus } from './courseContentLoader';
-
-describe('loadDayFocus (v0.6)', () => {
-  it('should return null when not running in Electron or no local clone', () => {
-    const result = loadDayFocus(2, 4);
-    expect(result).toBeNull();
+describe("loadDayFocus", () => {
+  beforeEach(() => {
+    delete (window as Window & { electronAPI?: unknown }).electronAPI;
   });
 
-  it('should return a properly shaped object when content exists (Electron only)', () => {
-    // In browser mode this is always null, so we test the expected shape for future Electron runs
-    const mockShape = {
+  afterEach(() => {
+    delete (window as Window & { electronAPI?: unknown }).electronAPI;
+    vi.restoreAllMocks();
+  });
+
+  it("returns null when not in Electron", () => {
+    expect(loadDayFocus(2, 4)).toBeNull();
+  });
+
+  it("returns null when getDayFocusContent is missing", () => {
+    window.electronAPI = {} as unknown as NonNullable<Window["electronAPI"]>;
+    expect(loadDayFocus(2, 4)).toBeNull();
+  });
+
+  it("returns content from preload when available", () => {
+    const payload = {
       week: 2,
       day: 4,
-      files: [{ name: 'README.md', content: '# Lesson content' }],
+      files: [{ name: "README.md", content: "# Hi" }],
     };
+    window.electronAPI = {
+      getDayFocusContent: vi.fn().mockReturnValue(payload),
+    } as unknown as NonNullable<Window["electronAPI"]>;
+    expect(loadDayFocus(2, 4)).toEqual(payload);
+  });
 
-    expect(mockShape.week).toBe(2);
-    expect(mockShape.day).toBe(4);
-    expect(Array.isArray(mockShape.files)).toBe(true);
-    expect(mockShape.files[0].name).toBe('README.md');
+  it("returns null when getDayFocusContent throws", () => {
+    window.electronAPI = {
+      getDayFocusContent: vi.fn().mockImplementation(() => {
+        throw new Error("disk");
+      }),
+    } as unknown as NonNullable<Window["electronAPI"]>;
+    expect(loadDayFocus(1, 1)).toBeNull();
+  });
+
+  it("returns null when window is undefined (SSR-safe)", () => {
+    const prev = globalThis.window;
+    try {
+      // @ts-expect-error intentional removal for branch coverage
+      delete globalThis.window;
+      expect(loadDayFocus(1, 1)).toBeNull();
+    } finally {
+      globalThis.window = prev;
+    }
   });
 });

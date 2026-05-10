@@ -30,11 +30,15 @@
  * - Electron context isolation: https://www.electronjs.org/docs/latest/tutorial/context-isolation
  */
 
-/** True when the preload bridge exposes synchronous course scan (desktop app only). */
-const usePreloadCourseScan =
-  typeof window !== 'undefined' &&
-  typeof (window as Window & { electronAPI?: { getCourseContentScan?: () => unknown } }).electronAPI
-    ?.getCourseContentScan === 'function';
+import { appLog } from "./appLog";
+
+/** True in Electron renderer when `window.electronAPI` exists (scan may still be empty). */
+function electronPreloadBridgeActive(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    !!(window as Window & { electronAPI?: unknown }).electronAPI
+  );
+}
 
 /* ============================================================
    BROWSER-SAFE (NO-OP) IMPLEMENTATIONS
@@ -45,7 +49,10 @@ function browserHasLocalCourseContent(): boolean {
   return false;
 }
 
-function browserGetAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
+function browserGetAvailableWeeksAndDays(): Array<{
+  week: number;
+  days: number[];
+}> {
   return [];
 }
 
@@ -53,14 +60,29 @@ function browserGetAvailableWeeksAndDays(): Array<{ week: number; days: number[]
    ELECTRON (preload bridge — no Node in renderer bundle)
    ============================================================ */
 
-function getScanFromPreload(): { hasLocal: boolean; weeks: Array<{ week: number; days: number[] }> } {
+function getScanFromPreload(): {
+  hasLocal: boolean;
+  weeks: Array<{ week: number; days: number[] }>;
+} {
   try {
-    const api = (window as Window & { electronAPI?: { getCourseContentScan?: () => { hasLocal: boolean; weeks: Array<{ week: number; days: number[] }> } } }).electronAPI;
+    const api = (
+      window as Window & {
+        electronAPI?: {
+          getCourseContentScan?: () => {
+            hasLocal: boolean;
+            weeks: Array<{ week: number; days: number[] }>;
+          };
+        };
+      }
+    ).electronAPI;
     if (!api?.getCourseContentScan) {
       return { hasLocal: false, weeks: [] };
     }
     return api.getCourseContentScan();
-  } catch {
+  } catch (e) {
+    appLog("error", "courseScanner", "getCourseContentScan threw", {
+      error: e instanceof Error ? e.message : String(e),
+    });
     return { hasLocal: false, weeks: [] };
   }
 }
@@ -69,7 +91,10 @@ function electronHasLocalCourseContent(): boolean {
   return getScanFromPreload().hasLocal;
 }
 
-function electronGetAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
+function electronGetAvailableWeeksAndDays(): Array<{
+  week: number;
+  days: number[];
+}> {
   return getScanFromPreload().weeks;
 }
 
@@ -78,19 +103,26 @@ function electronGetAvailableWeeksAndDays(): Array<{ week: number; days: number[
    ============================================================ */
 
 export function hasLocalCourseContent(): boolean {
-  return usePreloadCourseScan ? electronHasLocalCourseContent() : browserHasLocalCourseContent();
+  return electronPreloadBridgeActive()
+    ? electronHasLocalCourseContent()
+    : browserHasLocalCourseContent();
 }
 
-export function getAvailableWeeksAndDays(): Array<{ week: number; days: number[] }> {
-  return usePreloadCourseScan ? electronGetAvailableWeeksAndDays() : browserGetAvailableWeeksAndDays();
+export function getAvailableWeeksAndDays(): Array<{
+  week: number;
+  days: number[];
+}> {
+  return electronPreloadBridgeActive()
+    ? electronGetAvailableWeeksAndDays()
+    : browserGetAvailableWeeksAndDays();
 }
 
 export function getAvailableWeeks(): number[] {
-  return getAvailableWeeksAndDays().map(w => w.week);
+  return getAvailableWeeksAndDays().map((w) => w.week);
 }
 
 export function getAvailableDaysForWeek(week: number): number[] {
   const weeks = getAvailableWeeksAndDays();
-  const found = weeks.find(w => w.week === week);
+  const found = weeks.find((w) => w.week === week);
   return found ? found.days : [];
 }

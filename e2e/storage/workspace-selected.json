@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "platoon-companion-workspace",
+          "value": "/demo/workspace-for-visual-e2e"
+        }
+      ]
+    }
+  ]
+}

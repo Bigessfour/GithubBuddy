@@ -1,11 +1,16 @@
-import { useState } from 'react';
-import './App.css';
-import { DaySelector } from './components/DaySelector';
-import { WorkspaceSelector } from './components/WorkspaceSelector';
-import { DayFocus } from './components/DayFocus';
-import { GuidancePanel } from './components/GuidancePanel';
-import { useDayGuidance } from './hooks/useDayGuidance';
-import { useDayFocus } from './hooks/useDayFocus';
+import { useState, useEffect } from "react";
+import "./App.css";
+import { DaySelector } from "./components/DaySelector";
+import { WorkspaceSelector } from "./components/WorkspaceSelector";
+import { UpstreamPathSelector } from "./components/UpstreamPathSelector";
+import { DayFocus } from "./components/DayFocus";
+import { GuidancePanel } from "./components/GuidancePanel";
+import { useDayGuidance } from "./hooks/useDayGuidance";
+import { useDayFocus } from "./hooks/useDayFocus";
+import { STORAGE_UPSTREAM, STORAGE_WORKSPACE } from "./constants/storage";
+import { readStoredPath } from "./utils/readStoredPath";
+import { ToastProvider } from "./context/ToastProvider";
+import { appLog } from "./utils/appLog";
 
 /**
  * Main Application Component - Platoon Companion
@@ -34,23 +39,50 @@ import { useDayFocus } from './hooks/useDayFocus';
 const DEFAULT_WEEK = 2;
 const DEFAULT_DAY = 4;
 
-function App() {
-  console.log('[Renderer] App component mounted');
+function AppContent() {
+  appLog("info", "App", "App component mounted");
   // === State ===
   // The currently chosen week and day. Changing these triggers guidance lookup and progress restore.
   const [selectedWeek, setSelectedWeek] = useState(DEFAULT_WEEK);
   const [selectedDay, setSelectedDay] = useState(DEFAULT_DAY);
 
-  /**
-   * Workspace path selected by the user (v0.2 feature).
-   *
-   * Why we add this state now:
-   * - It prepares the app for the "safe command execution" part of v0.2.
-   * - The shape (string | null) is intentionally simple so it can later be replaced
-   *   by a real path coming from Electron's native dialog without changing any other code.
-   * - This is the documented "future-proof state shape" pattern.
-   */
-  const [workspacePath, setWorkspacePath] = useState<string | null>(null);
+  /** Fork / project folder — command cwd; persisted across sessions. */
+  const [workspacePath, setWorkspacePath] = useState<string | null>(() =>
+    readStoredPath(STORAGE_WORKSPACE),
+  );
+
+  /** Local course clone root — substituted into {{UPSTREAM}} in commands. */
+  const [upstreamPath, setUpstreamPath] = useState<string | null>(() =>
+    readStoredPath(STORAGE_UPSTREAM),
+  );
+
+  useEffect(() => {
+    try {
+      if (workspacePath) {
+        localStorage.setItem(STORAGE_WORKSPACE, workspacePath);
+      } else {
+        localStorage.removeItem(STORAGE_WORKSPACE);
+      }
+    } catch (e) {
+      appLog("warn", "App", "localStorage workspace persist failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }, [workspacePath]);
+
+  useEffect(() => {
+    try {
+      if (upstreamPath) {
+        localStorage.setItem(STORAGE_UPSTREAM, upstreamPath);
+      } else {
+        localStorage.removeItem(STORAGE_UPSTREAM);
+      }
+    } catch (e) {
+      appLog("warn", "App", "localStorage upstream persist failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }, [upstreamPath]);
 
   // Derived data: the full guidance object (or undefined). The hook uses useMemo internally.
   const guidance = useDayGuidance(selectedWeek, selectedDay);
@@ -65,9 +97,8 @@ function App() {
   };
 
   // === Derived UI values ===
-  const currentDayLabel = guidance
-    ? `Week ${guidance.week} Day ${guidance.day}`
-    : 'Select a day';
+  // Always mirror the dropdowns; guidance may be missing for some week/day pairs.
+  const currentDayLabel = `Week ${selectedWeek} Day ${selectedDay}`;
 
   return (
     <div className="app-container">
@@ -75,7 +106,9 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <h1>Platoon Companion</h1>
-          <p className="tagline">GitHub best practices for Code Platoon AI DevOps</p>
+          <p className="tagline">
+            GitHub best practices for Code Platoon AI DevOps
+          </p>
         </div>
         <div className="current-day-badge">{currentDayLabel}</div>
       </header>
@@ -104,6 +137,12 @@ function App() {
           onWorkspaceChange={setWorkspacePath}
         />
 
+        <UpstreamPathSelector
+          key={upstreamPath ?? "__upstream_unset__"}
+          upstreamPath={upstreamPath}
+          onUpstreamChange={setUpstreamPath}
+        />
+
         {/* v0.6: Dynamic Day Focus from upstream repo (full content) */}
         {dayFocus ? (
           <DayFocus focus={dayFocus} />
@@ -113,13 +152,18 @@ function App() {
             progressScope={`${selectedWeek}-${selectedDay}`}
             guidance={guidance}
             workspacePath={workspacePath}
+            upstreamPath={upstreamPath}
           />
         ) : (
           <div className="no-guidance">
-            <p>No guidance available for Week {selectedWeek} Day {selectedDay} yet.</p>
             <p>
-              To load the actual lesson, lab, and challenge content from the upstream repo, 
-              clone it into <code>data/course-content/aico-echo</code>.
+              No guidance available for Week {selectedWeek} Day {selectedDay}{" "}
+              yet.
+            </p>
+            <p>
+              To load the actual lesson, lab, and challenge content from the
+              upstream repo, clone it into{" "}
+              <code>data/course-content/aico-echo</code>.
             </p>
             <p>See the README for setup instructions.</p>
           </div>
@@ -128,11 +172,18 @@ function App() {
 
       <footer className="app-footer">
         <p>
-          Built for Code Platoon • Always PR to your fork first • Practice makes permanent
+          Built for Code Platoon • Always PR to your fork first • Practice makes
+          permanent
         </p>
       </footer>
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  );
+}

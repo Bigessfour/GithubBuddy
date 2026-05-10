@@ -6,17 +6,26 @@
  * https://www.electronjs.org/docs/latest/tutorial/context-isolation
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 export type WeekDayInfo = { week: number; days: number[] };
 
-export function scanCourseContentFromDisk(): { hasLocal: boolean; weeks: WeekDayInfo[] } {
-  const coursePath = path.join(process.cwd(), 'data', 'course-content', 'aico-echo');
+export function scanCourseContentFromDisk(): {
+  hasLocal: boolean;
+  weeks: WeekDayInfo[];
+} {
+  const coursePath = path.join(
+    process.cwd(),
+    "data",
+    "course-content",
+    "aico-echo",
+  );
 
   let hasLocal: boolean;
   try {
-    hasLocal = fs.existsSync(coursePath) && fs.statSync(coursePath).isDirectory();
+    hasLocal =
+      fs.existsSync(coursePath) && fs.statSync(coursePath).isDirectory();
   } catch {
     return { hasLocal: false, weeks: [] };
   }
@@ -31,7 +40,7 @@ export function scanCourseContentFromDisk(): { hasLocal: boolean; weeks: WeekDay
     const weeks = entries
       .filter((entry) => entry.isDirectory() && /^week\d+$/i.test(entry.name))
       .map((entry) => {
-        const weekNum = parseInt(entry.name.replace(/^week/i, ''), 10);
+        const weekNum = parseInt(entry.name.replace(/^week/i, ""), 10);
         const weekPath = path.join(coursePath, entry.name);
 
         let days: number[] = [];
@@ -39,7 +48,7 @@ export function scanCourseContentFromDisk(): { hasLocal: boolean; weeks: WeekDay
           const dayEntries = fs.readdirSync(weekPath, { withFileTypes: true });
           days = dayEntries
             .filter((d) => d.isDirectory() && /^day\d+$/i.test(d.name))
-            .map((d) => parseInt(d.name.replace(/^day/i, ''), 10))
+            .map((d) => parseInt(d.name.replace(/^day/i, ""), 10))
             .sort((a, b) => a - b);
         } catch {
           // ignore unreadable week folders
@@ -52,7 +61,22 @@ export function scanCourseContentFromDisk(): { hasLocal: boolean; weeks: WeekDay
 
     return { hasLocal: true, weeks };
   } catch (error) {
-    console.error('[courseContentScan] Failed to scan course content directory:', error);
+    console.error(
+      "[courseContentScan] Failed to scan course content directory:",
+      error,
+    );
+    void import("./reportToMainLog")
+      .then(({ reportToMainLog }) => {
+        reportToMainLog(
+          "error",
+          "courseContentScan",
+          "Failed to scan course content directory",
+          {
+            error: error instanceof Error ? error.message : String(error),
+          },
+        );
+      })
+      .catch(() => {});
     return { hasLocal: true, weeks: [] };
   }
 }

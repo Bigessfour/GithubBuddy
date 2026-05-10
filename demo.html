@@ -1,351 +1,405 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Platoon Companion • Demo</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platoon Companion • Demo</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap");
 
-    :root {
-      --bg: #0f0f11;
-      --card: #1a1a1f;
-      --accent: #6366f1;
-      --text: #f4f4f5;
-      --muted: #a1a1aa;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Inter', system_ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 60px 40px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 60px;
-    }
-
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .logo-dot {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 24px;
-      color: white;
-    }
-
-    h1 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 56px;
-      font-weight: 600;
-      letter-spacing: -2.5px;
-      margin-bottom: 16px;
-    }
-
-    .tagline {
-      font-size: 22px;
-      color: var(--muted);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .section {
-      margin-bottom: 80px;
-    }
-
-    h2 {
-      font-size: 28px;
-      margin-bottom: 24px;
-      color: white;
-    }
-
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 24px;
-    }
-
-    .feature-card {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 32px;
-      border: 1px solid #27272a;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    }
-
-    .feature-icon {
-      width: 48px;
-      height: 48px;
-      background: #27272a;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-
-    .feature-card h3 {
-      font-size: 20px;
-      margin-bottom: 12px;
-    }
-
-    .feature-card p {
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .demo-actions {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 40px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px 32px;
-      font-size: 16px;
-      font-weight: 600;
-      border-radius: 9999px;
-      text-decoration: none;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: white;
-      color: #111;
-    }
-
-    .btn-primary:hover {
-      background: #e5e7eb;
-      transform: translateY(-2px);
-    }
-
-    .btn-secondary {
-      background: transparent;
-      color: white;
-      border: 2px solid #3f3f46;
-    }
-
-    .btn-secondary:hover {
-      border-color: #52525b;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #27272a;
-      padding: 8px 20px;
-      border-radius: 9999px;
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      background: #22c55e;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    .footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 14px;
-      margin-top: 60px;
-    }
-
-    .version {
-      font-family: monospace;
-      background: #27272a;
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <header>
-      <div class="logo">
-        <div class="logo-dot">PC</div>
-        <span style="font-size: 28px; font-weight: 600;">Platoon Companion</span>
-      </div>
-      
-      <div class="status">
-        <div class="status-dot"></div>
-        <span>v0.4 — Ready for Demo</span>
-      </div>
-
-      <h1>GitHub Best Practices,<br> Made Interactive.</h1>
-      <p class="tagline">
-        A desktop + web app that teaches Code Platoon students professional 
-        terminal and GitHub workflows through guided, executable checklists.
-      </p>
-    </header>
-
-    <!-- What We Have Today -->
-    <div class="section">
-      <h2>What We’ve Built So Far</h2>
-      
-      <div class="features">
-        <!-- Feature 1 -->
-        <div class="feature-card">
-          <div class="feature-icon">📋</div>
-          <h3>Guided Daily Workflows</h3>
-          <p>
-            Select Week 2 Day 4 (or any day when local course content is present) and get a 
-            step-by-step checklist with clear explanations of <strong>why</strong> each action 
-            follows GitHub best practices.
-          </p>
-        </div>
-
-        <!-- Feature 2 -->
-        <div class="feature-card">
-          <div class="feature-icon">🖥️</div>
-          <h3>Real Desktop App (Windows + macOS)</h3>
-          <p>
-            Runs as a native application using Electron + electron-vite. 
-            Same codebase works on both platforms with hot reload during development.
-          </p>
-        </div>
-
-        <!-- Feature 3 -->
-        <div class="feature-card">
-          <div class="feature-icon">📂</div>
-          <h3>Dynamic Course Content</h3>
-          <p>
-            Optionally reads from a local clone of the private Code Platoon repo 
-            (<code>aico-echo</code>) to automatically populate available weeks and days.
-          </p>
-        </div>
-
-        <!-- Feature 4 -->
-        <div class="feature-card">
-          <div class="feature-icon">⚡</div>
-          <h3>Safe Command Execution</h3>
-          <p>
-            Users can actually <strong>run</strong> the commands from the checklist. 
-            Every execution shows a preview + requires confirmation before running 
-            inside the chosen workspace folder.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- How to Demo -->
-    <div class="section" style="text-align: center;">
-      <h2>How to Run the Demo</h2>
-      <p style="color: var(--muted); max-width: 520px; margin: 0 auto 32px;">
-        Open a terminal in the project folder and run one of the commands below.
-      </p>
-
-      <div class="demo-actions">
-        <a href="#" onclick="copyCommand('npm run dev'); return false" class="btn btn-primary">
-          Web Version (Browser)
-        </a>
-        <a href="#" onclick="copyCommand('npm run electron:dev'); return false" class="btn btn-secondary">
-          Desktop Version (Native Window)
-        </a>
-      </div>
-      
-      <p style="margin-top: 24px; font-size: 13px; color: var(--muted);">
-        Both commands start a development server with hot reload.
-      </p>
-    </div>
-
-    <!-- Key Highlights -->
-    <div class="section">
-      <h2>Key Highlights for the Class</h2>
-      
-      <div style="background: var(--card); border-radius: 16px; padding: 40px; border: 1px solid #27272a;">
-        <ul style="list-style: none; display: grid; gap: 18px; font-size: 17px;">
-          <li style="display: flex; gap: 12px;">
-            <span style="color: #6366f1;">→</span> 
-            <span>Every command has a clear “why” explanation grounded in GitHub best practices</span>
-          </li>
-          <li style="display: flex; gap: 12px;">
-            <span style="color: #6366f1;">→</span> 
-            <span>Workspace folder selection + real native dialog (desktop only)</span>
-          </li>
-          <li style="display: flex; gap: 12px;">
-            <span style="color: #6366f1;">→</span> 
-            <span>Preview + confirmation before any command is executed</span>
-          </li>
-          <li style="display: flex; gap: 12px;">
-            <span style="color: #6366f1;">→</span> 
-            <span>Fully cross-platform (Windows &amp; macOS supported)</span>
-          </li>
-          <li style="display: flex; gap: 12px;">
-            <span style="color: #6366f1;">→</span> 
-            <span>Heavy emphasis on documentation and learning (every file is heavily commented)</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="footer">
-      Built for <strong>Code Platoon AI DevOps</strong> • 
-      <span class="version">v0.4</span> • 
-      May 2026
-    </div>
-  </div>
-
-  <script>
-    function copyCommand(cmd) {
-      navigator.clipboard.writeText(cmd).then(() => {
-        const originalText = event.target.innerText;
-        event.target.innerText = 'Copied!';
-        setTimeout(() => {
-          event.target.innerText = originalText;
-        }, 1800);
-      });
-    }
-
-    // Easter egg - press 'd' to toggle dark mode hint
-    document.addEventListener('keydown', function(e) {
-      if (e.key.toLowerCase() === 'd') {
-        document.body.style.filter = document.body.style.filter ? '' : 'hue-rotate(20deg)';
+      :root {
+        --bg: #0f0f11;
+        --card: #1a1a1f;
+        --accent: #6366f1;
+        --text: #f4f4f5;
+        --muted: #a1a1aa;
       }
-    });
-  </script>
-</body>
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", system_ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 60px 40px;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+
+      .logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .logo-dot {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 24px;
+        color: white;
+      }
+
+      h1 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 56px;
+        font-weight: 600;
+        letter-spacing: -2.5px;
+        margin-bottom: 16px;
+      }
+
+      .tagline {
+        font-size: 22px;
+        color: var(--muted);
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .section {
+        margin-bottom: 80px;
+      }
+
+      h2 {
+        font-size: 28px;
+        margin-bottom: 24px;
+        color: white;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+      }
+
+      .feature-card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 32px;
+        border: 1px solid #27272a;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow:
+          0 20px 25px -5px rgb(0 0 0 / 0.1),
+          0 8px 10px -6px rgb(0 0 0 / 0.1);
+      }
+
+      .feature-icon {
+        width: 48px;
+        height: 48px;
+        background: #27272a;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+
+      .feature-card h3 {
+        font-size: 20px;
+        margin-bottom: 12px;
+      }
+
+      .feature-card p {
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .demo-actions {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 40px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 9999px;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: white;
+        color: #111;
+      }
+
+      .btn-primary:hover {
+        background: #e5e7eb;
+        transform: translateY(-2px);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: white;
+        border: 2px solid #3f3f46;
+      }
+
+      .btn-secondary:hover {
+        border-color: #52525b;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #27272a;
+        padding: 8px 20px;
+        border-radius: 9999px;
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        background: #22c55e;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      .footer {
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+        margin-top: 60px;
+      }
+
+      .version {
+        font-family: monospace;
+        background: #27272a;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <header>
+        <div class="logo">
+          <div class="logo-dot">PC</div>
+          <span style="font-size: 28px; font-weight: 600"
+            >Platoon Companion</span
+          >
+        </div>
+
+        <div class="status">
+          <div class="status-dot"></div>
+          <span>v0.4 — Ready for Demo</span>
+        </div>
+
+        <h1>
+          GitHub Best Practices,<br />
+          Made Interactive.
+        </h1>
+        <p class="tagline">
+          A desktop + web app that teaches Code Platoon students professional
+          terminal and GitHub workflows through guided, executable checklists.
+        </p>
+      </header>
+
+      <!-- What We Have Today -->
+      <div class="section">
+        <h2>What We’ve Built So Far</h2>
+
+        <div class="features">
+          <!-- Feature 1 -->
+          <div class="feature-card">
+            <div class="feature-icon">📋</div>
+            <h3>Guided Daily Workflows</h3>
+            <p>
+              Select Week 2 Day 4 (or any day when local course content is
+              present) and get a step-by-step checklist with clear explanations
+              of <strong>why</strong> each action follows GitHub best practices.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <h3>Real Desktop App (Windows + macOS)</h3>
+            <p>
+              Runs as a native application using Electron + electron-vite. Same
+              codebase works on both platforms with hot reload during
+              development.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="feature-card">
+            <div class="feature-icon">📂</div>
+            <h3>Dynamic Course Content</h3>
+            <p>
+              Optionally reads from a local clone of the private Code Platoon
+              repo (<code>aico-echo</code>) to automatically populate available
+              weeks and days.
+            </p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Safe Command Execution</h3>
+            <p>
+              Users can actually <strong>run</strong> the commands from the
+              checklist. Every execution shows a preview + requires confirmation
+              before running inside the chosen workspace folder.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- How to Demo -->
+      <div class="section" style="text-align: center">
+        <h2>How to Run the Demo</h2>
+        <p style="color: var(--muted); max-width: 520px; margin: 0 auto 32px">
+          Open a terminal in the project folder and run one of the commands
+          below.
+        </p>
+
+        <div class="demo-actions">
+          <a
+            href="#"
+            onclick="
+              copyCommand('npm run dev');
+              return false;
+            "
+            class="btn btn-primary"
+          >
+            Web Version (Browser)
+          </a>
+          <a
+            href="#"
+            onclick="
+              copyCommand('npm run electron:dev');
+              return false;
+            "
+            class="btn btn-secondary"
+          >
+            Desktop Version (Native Window)
+          </a>
+        </div>
+
+        <p style="margin-top: 24px; font-size: 13px; color: var(--muted)">
+          Both commands start a development server with hot reload.
+        </p>
+      </div>
+
+      <!-- Key Highlights -->
+      <div class="section">
+        <h2>Key Highlights for the Class</h2>
+
+        <div
+          style="
+            background: var(--card);
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid #27272a;
+          "
+        >
+          <ul
+            style="list-style: none; display: grid; gap: 18px; font-size: 17px"
+          >
+            <li style="display: flex; gap: 12px">
+              <span style="color: #6366f1">→</span>
+              <span
+                >Every command has a clear “why” explanation grounded in GitHub
+                best practices</span
+              >
+            </li>
+            <li style="display: flex; gap: 12px">
+              <span style="color: #6366f1">→</span>
+              <span
+                >Workspace folder selection + real native dialog (desktop
+                only)</span
+              >
+            </li>
+            <li style="display: flex; gap: 12px">
+              <span style="color: #6366f1">→</span>
+              <span>Preview + confirmation before any command is executed</span>
+            </li>
+            <li style="display: flex; gap: 12px">
+              <span style="color: #6366f1">→</span>
+              <span>Fully cross-platform (Windows &amp; macOS supported)</span>
+            </li>
+            <li style="display: flex; gap: 12px">
+              <span style="color: #6366f1">→</span>
+              <span
+                >Heavy emphasis on documentation and learning (every file is
+                heavily commented)</span
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer">
+        Built for <strong>Code Platoon AI DevOps</strong> •
+        <span class="version">v0.4</span> • May 2026
+      </div>
+    </div>
+
+    <script>
+      function copyCommand(cmd) {
+        navigator.clipboard.writeText(cmd).then(() => {
+          const originalText = event.target.innerText;
+          event.target.innerText = "Copied!";
+          setTimeout(() => {
+            event.target.innerText = originalText;
+          }, 1800);
+        });
+      }
+
+      // Easter egg - press 'd' to toggle dark mode hint
+      document.addEventListener("keydown", function (e) {
+        if (e.key.toLowerCase() === "d") {
+          document.body.style.filter = document.body.style.filter
+            ? ""
+            : "hue-rotate(20deg)";
+        }
+      });
+    </script>
+  </body>
 </html>

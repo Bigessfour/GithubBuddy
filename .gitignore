@@ -1,5 +1,6 @@
-# Logs
-logs
+# Logs (keep directory; ignore log files)
+logs/*
+!logs/.gitkeep
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -27,3 +28,14 @@ dist-ssr
 /data/
 dist-electron/
 out/
+
+# Vitest / V8
+coverage/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+
+# macOS
+**/.DS_Store

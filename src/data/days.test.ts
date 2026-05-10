@@ -1,45 +1,63 @@
 /**
  * Automated tests for the days data layer.
- *
- * These tests prove that:
- * 1. The getDayGuidance function correctly returns Week 2 Day 4 data
- * 2. It returns undefined for days that have not been authored yet
- * 3. The data structure matches our TypeScript interfaces (type safety)
- *
- * Why test the data layer first?
- * - It has no React dependencies (pure functions)
- * - It is the foundation everything else builds on
- * - Fast feedback loop (runs in < 100ms)
- *
- * To run: npm test
- * To run once: npx vitest run
- *
- * References:
- * - Vitest getting started: https://vitest.dev/guide/
- * - Testing library for React (future component tests): https://testing-library.com/docs/react-testing-library/intro/
  */
 
-import { describe, it, expect } from 'vitest';
-import { getDayGuidance, days } from './days';
+import { describe, it, expect } from "vitest";
+import { getDayGuidance, days, buildStandardGithubDayWorkflow } from "./days";
 
-describe('getDayGuidance', () => {
-  it('should return the Week 2 Day 4 guidance when requested', () => {
+describe("getDayGuidance", () => {
+  it("should return guidance for Week 2 Day 4", () => {
     const guidance = getDayGuidance(2, 4);
-
     expect(guidance).toBeDefined();
     expect(guidance?.week).toBe(2);
     expect(guidance?.day).toBe(4);
-    expect(guidance?.title).toContain('Week 2 - Day 4');
-    // Verify we have the expected number of steps (7 in our seed data)
     expect(guidance?.steps.length).toBe(7);
   });
 
-  it('should return undefined for a day that has not been created yet', () => {
-    const guidance = getDayGuidance(99, 99);
-    expect(guidance).toBeUndefined();
+  it("should return guidance for Week 2 Days 1–5", () => {
+    for (const d of [1, 2, 3, 4, 5]) {
+      const g = getDayGuidance(2, d);
+      expect(g).toBeDefined();
+      expect(g!.week).toBe(2);
+      expect(g!.day).toBe(d);
+    }
   });
 
-  it('should expose all authored days via the days export', () => {
-    expect(Object.keys(days)).toContain('W2D4');
+  it("should return undefined for a day that has not been created yet", () => {
+    expect(getDayGuidance(99, 99)).toBeUndefined();
+  });
+});
+
+describe("days invariants", () => {
+  it("every authored day has unique step ids and required fields", () => {
+    for (const [key, g] of Object.entries(days)) {
+      expect(key).toMatch(/^W\d+D\d+$/);
+      const ids = g.steps.map((s) => s.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const step of g.steps) {
+        expect(step.title.length).toBeGreaterThan(0);
+        expect(step.command.length).toBeGreaterThan(0);
+        expect(step.why.length).toBeGreaterThan(0);
+        expect(["terminal", "git", "github", "pr"]).toContain(step.category);
+      }
+      expect(g.bestPractices.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("buildStandardGithubDayWorkflow", () => {
+  it("builds consistent structure for arbitrary week/day", () => {
+    const g = buildStandardGithubDayWorkflow(10, 3);
+    expect(g.week).toBe(10);
+    expect(g.day).toBe(3);
+    expect(g.steps.map((s) => s.id)).toEqual([
+      "s1",
+      "s2",
+      "s3",
+      "s4",
+      "s5",
+      "s6",
+      "s7",
+    ]);
   });
 });

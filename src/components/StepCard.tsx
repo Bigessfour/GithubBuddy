@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import type { Step } from '../types';
-import { CommandOutput } from './CommandOutput';
+import React, { useState } from "react";
+import type { Step } from "../types";
+import { CommandOutput } from "./CommandOutput";
+import { Tooltip } from "./Tooltip";
+import { useToast } from "../context/useToast";
+import {
+  WORKFLOW_TOASTS,
+  WORKFLOW_TOOLTIPS,
+} from "../content/githubWorkflowHints";
+import { appLog } from "../utils/appLog";
 
 /**
  * StepCard – v0.4 with Safe Command Execution
@@ -32,6 +39,8 @@ import { CommandOutput } from './CommandOutput';
 
 interface StepCardProps {
   step: Step;
+  /** Fully resolved shell command (placeholders replaced) for display, copy, and run. */
+  resolvedCommand: string;
   isCompleted: boolean;
   onToggleComplete: (id: string) => void;
   workspacePath: string | null;
@@ -39,31 +48,38 @@ interface StepCardProps {
 
 export const StepCard: React.FC<StepCardProps> = ({
   step,
+  resolvedCommand,
   isCompleted,
   onToggleComplete,
   workspacePath,
 }) => {
+  const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  const [liveOutput, setLiveOutput] = useState('');
-  const [liveError, setLiveError] = useState('');
+  const [liveOutput, setLiveOutput] = useState("");
+  const [liveError, setLiveError] = useState("");
   const [commandResult, setCommandResult] = useState<{
     output: string;
     error?: string;
     success: boolean;
   } | null>(null);
 
-  const isComment = step.command.trim().startsWith('#');
+  const isComment = resolvedCommand.trim().startsWith("#");
   const canRun = workspacePath && !isComment;
 
   const handleCopy = async () => {
+    if (copied) return;
     try {
-      await navigator.clipboard.writeText(step.command);
+      await navigator.clipboard.writeText(resolvedCommand);
       setCopied(true);
+      showToast(WORKFLOW_TOASTS.copiedCommand, "success");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
-      alert('Could not copy to clipboard. Please copy manually.');
+      appLog("error", "StepCard", "copy command failed", {
+        stepId: step.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      showToast(WORKFLOW_TOASTS.copyFailed, "error");
     }
   };
 
@@ -75,26 +91,29 @@ export const StepCard: React.FC<StepCardProps> = ({
    */
   const handleRunCommand = async () => {
     if (!workspacePath || !window.electronAPI?.executeCommand) {
-      alert('Command execution is only available in the desktop app.');
+      showToast(
+        "Command execution is only available in the desktop app.",
+        "error",
+      );
       return;
     }
 
     const confirmed = window.confirm(
       `You are about to run this command in:\n${workspacePath}\n\n` +
-      `${step.command}\n\n` +
-      `Do you want to continue?`
+        `${resolvedCommand}\n\n` +
+        `Do you want to continue?`,
     );
 
     if (!confirmed) return;
 
     setIsRunning(true);
-    setLiveOutput('');
-    setLiveError('');
+    setLiveOutput("");
+    setLiveError("");
     setCommandResult(null);
 
     // v0.5: Set up streaming listeners
     const cleanupOutput = window.electronAPI.onCommandOutput?.((chunk) => {
-      if (chunk.type === 'stdout') {
+      if (chunk.type === "stdout") {
         setLiveOutput((prev) => prev + chunk.data);
       } else {
         setLiveError((prev) => prev + chunk.data);
@@ -102,8 +121,19 @@ export const StepCard: React.FC<StepCardProps> = ({
     });
 
     const cleanupComplete = window.electronAPI.onCommandComplete?.((result) => {
+      appLog(
+        result.success ? "info" : "warn",
+        "StepCard",
+        "command finished",
+        {
+          stepId: step.id,
+          success: result.success,
+          exitCode: result.exitCode,
+          error: result.error,
+        },
+      );
       setCommandResult({
-        output: result.output || '',
+        output: result.output || "",
         error: result.error,
         success: result.success,
       });
@@ -113,9 +143,13 @@ export const StepCard: React.FC<StepCardProps> = ({
     });
 
     try {
-      await window.electronAPI.executeCommand(step.command, workspacePath);
+      await window.electronAPI.executeCommand(resolvedCommand, workspacePath);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+      const message = err instanceof Error ? err.message : "Unknown error";
+      appLog("error", "StepCard", "executeCommand rejected", {
+        stepId: step.id,
+        message,
+      });
       setCommandResult({
         output: liveOutput,
         error: message,
@@ -128,7 +162,7 @@ export const StepCard: React.FC<StepCardProps> = ({
   };
 
   return (
-    <div className={`step-card ${isCompleted ? 'completed' : ''}`}>
+    <div className={`step-card ${isCompleted ? "completed" : ""}`}>
       <div className="step-header">
         <label className="complete-toggle">
           <input
@@ -137,41 +171,49 @@ export const StepCard: React.FC<StepCardProps> = ({
             onChange={() => onToggleComplete(step.id)}
             aria-label={`Mark step ${step.id} as complete`}
           />
-          <span className="step-number">{step.id.replace('s', '')}</span>
+          <span className="step-number">{step.id.replace("s", "")}</span>
         </label>
 
         <h3>{step.title}</h3>
-        <span className={`category-badge ${step.category}`}>{step.category}</span>
+        <span className={`category-badge ${step.category}`}>
+          {step.category}
+        </span>
       </div>
 
       <p className="why">{step.why}</p>
 
       <div className="command-block">
         <pre>
-          <code>{step.command}</code>
+          <code>{resolvedCommand}</code>
         </pre>
-        <button
-          type="button"
-          className="copy-button"
-          onClick={handleCopy}
-          disabled={copied}
-        >
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
+        <Tooltip text={WORKFLOW_TOOLTIPS.copyCommand}>
+          <button
+            type="button"
+            className="copy-button"
+            onClick={handleCopy}
+            aria-label={copied ? "Command copied" : "Copy command to clipboard"}
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </Tooltip>
       </div>
 
       {/* v0.4: Run button – only shown when workspace is selected and command is not a comment */}
       {canRun && (
         <div className="run-section">
-          <button
-            type="button"
-            className="run-button"
-            onClick={handleRunCommand}
-            disabled={isRunning}
-          >
-            {isRunning ? 'Running...' : 'Run Command'}
-          </button>
-          <span className="run-hint">Executes in your selected workspace folder</span>
+          <Tooltip text={WORKFLOW_TOOLTIPS.runCommand} disabled={isRunning}>
+            <button
+              type="button"
+              className="run-button"
+              onClick={handleRunCommand}
+              disabled={isRunning}
+            >
+              {isRunning ? "Running..." : "Run Command"}
+            </button>
+          </Tooltip>
+          <span className="run-hint">
+            Executes in your selected workspace folder
+          </span>
         </div>
       )}
 

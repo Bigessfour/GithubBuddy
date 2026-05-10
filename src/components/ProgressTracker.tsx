@@ -1,5 +1,7 @@
-import React from 'react';
-import type { Step } from '../types';
+import React from "react";
+import type { Step } from "../types";
+import { Tooltip } from "./Tooltip";
+import { WORKFLOW_TOOLTIPS } from "../content/githubWorkflowHints";
 
 /**
  * ProgressTracker Component
@@ -37,16 +39,24 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   return (
     <div className="progress-tracker">
       <div className="progress-header">
-        <h3>Progress</h3>
+        <h3 className="progress-title-row">
+          Progress
+          <Tooltip text={WORKFLOW_TOOLTIPS.progress}>
+            <button
+              type="button"
+              className="workflow-help-btn"
+              aria-label="Help: progress and checklist habits"
+            >
+              ?
+            </button>
+          </Tooltip>
+        </h3>
         <span className="progress-percent">{percent}%</span>
       </div>
 
       {/* The actual progress bar uses inline style for dynamic width + CSS transition */}
       <div className="progress-bar">
-        <div
-          className="progress-fill"
-          style={{ width: `${percent}%` }}
-        />
+        <div className="progress-fill" style={{ width: `${percent}%` }} />
       </div>
 
       <p className="progress-text">

@@ -17,6 +17,8 @@
  * - Handling clipboard permissions: https://developer.mozilla.org/en-US/docs/Web/API/Permissions_API
  */
 
+import { appLog } from "./appLog";
+
 /**
  * Copies the given text to the system clipboard.
  * @param text - The string to copy (usually a terminal command)
@@ -27,7 +29,9 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text);
     return true;
   } catch (err) {
-    console.error('Clipboard write failed:', err);
+    appLog("error", "clipboard", "writeText failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return false;
   }
 }

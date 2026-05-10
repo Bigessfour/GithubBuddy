@@ -2,8 +2,8 @@
  * Reads markdown day focus from disk. Preload-only — not bundled into the Vite renderer.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 export interface DayFile {
   name: string;
@@ -16,8 +16,16 @@ export interface DayFocusContent {
   files: DayFile[];
 }
 
-export function loadDayFocusFromDisk(week: number, day: number): DayFocusContent | null {
-  const courseRoot = path.join(process.cwd(), 'data', 'course-content', 'aico-echo');
+export function loadDayFocusFromDisk(
+  week: number,
+  day: number,
+): DayFocusContent | null {
+  const courseRoot = path.join(
+    process.cwd(),
+    "data",
+    "course-content",
+    "aico-echo",
+  );
   const dayPath = path.join(courseRoot, `week${week}`, `day${day}`);
 
   if (!fs.existsSync(dayPath) || !fs.statSync(dayPath).isDirectory()) {
@@ -27,9 +35,11 @@ export function loadDayFocusFromDisk(week: number, day: number): DayFocusContent
   try {
     const entries = fs.readdirSync(dayPath, { withFileTypes: true });
 
-    const priorityFiles = ['README.md', 'lesson.md', 'lab.md', 'challenge.md'];
+    const priorityFiles = ["README.md", "lesson.md", "lab.md", "challenge.md"];
     const allMdFiles = entries
-      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+      .filter(
+        (entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".md"),
+      )
       .map((entry) => entry.name);
 
     const orderedFiles = [
@@ -39,13 +49,27 @@ export function loadDayFocusFromDisk(week: number, day: number): DayFocusContent
 
     const files: DayFile[] = orderedFiles.map((filename) => {
       const filePath = path.join(dayPath, filename);
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = fs.readFileSync(filePath, "utf-8");
       return { name: filename, content };
     });
 
     return { week, day, files };
   } catch (error) {
-    console.error('[dayFocusLoader] Failed to load day focus content:', error);
+    console.error("[dayFocusLoader] Failed to load day focus content:", error);
+    void import("./reportToMainLog")
+      .then(({ reportToMainLog }) => {
+        reportToMainLog(
+          "error",
+          "dayFocusLoader",
+          "Failed to load day focus content",
+          {
+            week,
+            day,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        );
+      })
+      .catch(() => {});
     return null;
   }
 }

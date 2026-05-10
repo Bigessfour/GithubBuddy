@@ -23,10 +23,85 @@
  * - Security Best Practices: https://www.electronjs.org/docs/latest/tutorial/security
  */
 
-import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
-import path from 'path';
-import fs from 'fs';
-import { spawn } from 'child_process';
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  session,
+  type WebContents,
+} from "electron";
+import path from "path";
+import fs from "fs";
+import { runShellCommand } from "./runShellCommand";
+import { resolveValidatedUpstreamUrl } from "../src/utils/upstreamRepoUrl";
+import { writeReadOnlyUpstreamRecord } from "./upstreamRecordFile";
+import { UPSTREAM_STATUS_GH } from "../src/content/githubWorkflowHints";
+import type { FetchUpstreamErrorCode } from "../src/types/fetchUpstream";
+import {
+  classifyGitRemoteFailure,
+  isGithubHttpsUrl,
+  parseGithubHttpsOwnerRepo,
+} from "./classifyGitRemoteFailure";
+import {
+  ghApiRepoCheck,
+  isGhAvailable,
+  runGhAuthLoginWeb,
+  runGhAuthSetupGit,
+} from "./ghAuthForGitHub";
+import {
+  GitCommandError,
+  runGitWithUpstreamProgress,
+} from "./runGitWithUpstreamProgress";
+import {
+  initAppFileLogging,
+  writeAppLog,
+  logMainInfo,
+  logMainWarn,
+  logMainError,
+  type LogLevel,
+} from "./appFileLogger";
+
+const LOG_LEVELS = new Set<LogLevel>(["debug", "info", "warn", "error"]);
+
+ipcMain.handle("app-log", (_event, raw: unknown) => {
+  if (!raw || typeof raw !== "object") return;
+  const e = raw as Record<string, unknown>;
+  if (
+    typeof e.level !== "string" ||
+    typeof e.scope !== "string" ||
+    typeof e.message !== "string"
+  ) {
+    return;
+  }
+  if (!LOG_LEVELS.has(e.level as LogLevel)) return;
+  writeAppLog(e.level as LogLevel, e.scope, e.message, e.meta);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error(err);
+  try {
+    initAppFileLogging();
+    writeAppLog("error", "Process", "uncaughtException", err);
+  } catch {
+    /* ignore */
+  }
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandledRejection", reason);
+  try {
+    initAppFileLogging();
+    writeAppLog(
+      "error",
+      "Process",
+      "unhandledRejection",
+      reason instanceof Error ? reason : { reason: String(reason) },
+    );
+  } catch {
+    /* ignore */
+  }
+});
 
 /**
  * electron-vite writes the renderer bundle to project-root `out/renderer/`.
@@ -36,21 +111,21 @@ import { spawn } from 'child_process';
  */
 function resolveProductionIndexHtml(): string {
   const candidates = [
-    path.join(__dirname, '../../out/renderer/index.html'),
-    path.join(__dirname, '../../dist/index.html'),
-    path.join(app.getAppPath(), 'out', 'renderer', 'index.html'),
-    path.join(app.getAppPath(), 'dist', 'index.html'),
+    path.join(__dirname, "../../out/renderer/index.html"),
+    path.join(__dirname, "../../dist/index.html"),
+    path.join(app.getAppPath(), "out", "renderer", "index.html"),
+    path.join(app.getAppPath(), "dist", "index.html"),
     // Legacy / mistaken layout (keep last)
-    path.join(__dirname, '../out/renderer/index.html'),
+    path.join(__dirname, "../out/renderer/index.html"),
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) {
-      console.log('[Main] Resolved production index.html:', p);
+      logMainInfo("[Main] Resolved production index.html:", p);
       return p;
     }
   }
-  const fallback = path.join(__dirname, '../../out/renderer/index.html');
-  console.error('[Main] No index.html found. Tried:', candidates.join(', '));
+  const fallback = path.join(__dirname, "../../out/renderer/index.html");
+  logMainError("[Main] No index.html found. Tried:", candidates.join(", "));
   return fallback;
 }
 
@@ -62,7 +137,7 @@ function resolveProductionIndexHtml(): string {
 function shouldLoadDevServer(): boolean {
   if (app.isPackaged) return false;
   return (
-    process.env.NODE_ENV === 'development' ||
+    process.env.NODE_ENV === "development" ||
     Boolean(process.env.VITE_DEV_SERVER_URL)
   );
 }
@@ -83,11 +158,11 @@ function shouldLoadDevServer(): boolean {
  * - preload: <path>                 → Only safe bridge between renderer and main process
  */
 function createWindow() {
-  console.log('[Main] createWindow() called');
+  logMainInfo("[Main] createWindow() called");
 
   const loadFromDevServer = shouldLoadDevServer();
   const devUrl = process.env.VITE_DEV_SERVER_URL;
-  const rendererUrl = devUrl || 'http://localhost:5173';
+  const rendererUrl = devUrl || "http://localhost:5173";
   /** Retries when the Vite dev server is slow or serves an unexpected document (per startup plan). */
   let devLoadRetries = 0;
   const maxDevRetries = 3;
@@ -98,13 +173,16 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,                   // Required for ESM preload scripts; still secure with contextIsolation
-      webSecurity: true,                // Enforces same-origin policy
-      preload: path.join(__dirname, '../preload/preload.mjs'),
+      sandbox: false, // Required for ESM preload scripts; still secure with contextIsolation
+      webSecurity: true, // Enforces same-origin policy
+      preload: path.join(__dirname, "../preload/preload.mjs"),
     },
   });
 
-  console.log('[Main] BrowserWindow created, preload path:', path.join(__dirname, '../preload/preload.mjs'));
+  logMainInfo(
+    "[Main] BrowserWindow created, preload path:",
+    path.join(__dirname, "../preload/preload.mjs"),
+  );
 
   /**
    * Development vs Production Loading (using official app API)
@@ -114,20 +192,20 @@ function createWindow() {
    *
    * electron-vite may set VITE_DEV_SERVER_URL when spawning Electron; we fall back to localhost:5173.
    */
-  console.log(
-    '[Main] loadFromDevServer:',
+  logMainInfo(
+    "[Main] loadFromDevServer:",
     loadFromDevServer,
-    'isPackaged:',
+    "isPackaged:",
     app.isPackaged,
-    'NODE_ENV:',
+    "NODE_ENV:",
     process.env.NODE_ENV,
-    'VITE_DEV_SERVER_URL:',
+    "VITE_DEV_SERVER_URL:",
     devUrl,
   );
-  console.log('[Main] Renderer URL (dev only):', rendererUrl);
+  logMainInfo("[Main] Renderer URL (dev only):", rendererUrl);
 
   const loadDevRenderer = () => {
-    console.log('[Main] Loading renderer now:', rendererUrl);
+    logMainInfo("[Main] Loading renderer now:", rendererUrl);
     mainWindow.loadURL(rendererUrl);
   };
 
@@ -136,62 +214,87 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     const prodPath = resolveProductionIndexHtml();
-    console.log('[Main] Production loadFile:', prodPath);
+    logMainInfo("[Main] Production loadFile:", prodPath);
     mainWindow.loadFile(prodPath);
   }
 
   // Forward all renderer console messages using the modern event signature
   // This removes the deprecation warning and captures everything from React/Vite
-  mainWindow.webContents.on('console-message', (event) => {
+  mainWindow.webContents.on("console-message", (event) => {
     const { level, message, lineNumber, sourceId } = event;
-    const prefix = level === 3 ? '[Renderer ERROR]' : level === 2 ? '[Renderer WARN]' : '[Renderer LOG]';
+    const logLevel: LogLevel =
+      level === 3 ? "error" : level === 2 ? "warn" : "info";
+    writeAppLog(logLevel, "RendererConsole", message, {
+      sourceId,
+      lineNumber,
+    });
+    const prefix =
+      level === 3
+        ? "[Renderer ERROR]"
+        : level === 2
+          ? "[Renderer WARN]"
+          : "[Renderer LOG]";
     console.log(`${prefix} ${message} (${sourceId}:${lineNumber})`);
   });
 
-  mainWindow.webContents.on('did-finish-load', async () => {
-    console.log('[Main] did-finish-load - URL now:', mainWindow.webContents.getURL());
+  mainWindow.webContents.on("did-finish-load", async () => {
+    logMainInfo(
+      "[Main] did-finish-load - URL now:",
+      mainWindow.webContents.getURL(),
+    );
 
     // Diagnostic + fallback (using app API patterns for robustness)
     try {
       const hasScript = await mainWindow.webContents.executeJavaScript(
-        `!!document.querySelector('script[type="module"][src*="/src/main.tsx"]')`
+        `!!document.querySelector('script[type="module"][src*="/src/main.tsx"]')`,
       );
-      console.log('[Main] React entry script tag found in DOM:', hasScript);
+      logMainInfo("[Main] React entry script tag found in DOM:", hasScript);
 
       const rootHasContent = await mainWindow.webContents.executeJavaScript(
-        `document.getElementById('root')?.innerHTML?.length > 0`
+        `document.getElementById('root')?.innerHTML?.length > 0`,
       );
-      console.log('[Main] #root element has content:', rootHasContent);
+      logMainInfo("[Main] #root element has content:", rootHasContent);
 
       // file:// index.html would not resolve /src/main.tsx — retry the dev server URL instead.
       if (!hasScript && loadFromDevServer && devLoadRetries < maxDevRetries) {
         devLoadRetries++;
-        console.warn(
+        logMainWarn(
           `[Main] Missing React entry script in DOM; retrying dev URL (${devLoadRetries}/${maxDevRetries})...`,
         );
         setTimeout(loadDevRenderer, 500 * devLoadRetries);
       } else if (!hasScript && loadFromDevServer) {
-        console.error(
-          '[Main] Dev server still not serving project index.html with React entry. Check electron.vite renderer root matches project root.',
+        logMainError(
+          "[Main] Dev server still not serving project index.html with React entry. Check electron.vite renderer root matches project root.",
         );
       }
     } catch (err) {
-      console.error('[Main] Diagnostic JS execution failed:', err);
+      logMainError("[Main] Diagnostic JS execution failed:", err);
     }
   });
 
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
-    console.error('[Main] did-fail-load:', errorCode, errorDescription, 'at', validatedURL);
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (_event, errorCode, errorDescription, validatedURL) => {
+      logMainError(
+        "[Main] did-fail-load:",
+        errorCode,
+        errorDescription,
+        "at",
+        validatedURL,
+      );
 
-    if (loadFromDevServer && devLoadRetries < maxDevRetries) {
-      devLoadRetries++;
-      console.warn(`[Main] did-fail-load: retrying dev URL (${devLoadRetries}/${maxDevRetries})...`);
-      setTimeout(loadDevRenderer, 800 * devLoadRetries);
-    }
-  });
+      if (loadFromDevServer && devLoadRetries < maxDevRetries) {
+        devLoadRetries++;
+        logMainWarn(
+          `[Main] did-fail-load: retrying dev URL (${devLoadRetries}/${maxDevRetries})...`,
+        );
+        setTimeout(loadDevRenderer, 800 * devLoadRetries);
+      }
+    },
+  );
 
-  mainWindow.webContents.on('render-process-gone', (_event, details) => {
-    console.error('[Main] Renderer process crashed or was killed:', details);
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    logMainError("[Main] Renderer process crashed or was killed:", details);
   });
 }
 
@@ -201,23 +304,48 @@ function createWindow() {
 
 /**
  * Handler for 'select-workspace'
- * 
+ *
  * Opens a native system folder picker.
  * Returns the selected directory path or null if cancelled.
  *
  * This replaces the previous `prompt()` hack we used in the web version.
  */
-ipcMain.handle('select-workspace', async () => {
+ipcMain.handle("select-workspace", async () => {
   const result = await dialog.showOpenDialog({
-    properties: ['openDirectory'],
-    title: 'Select your workspace folder',
-    message: 'Choose the folder where you want to run the commands from today\'s checklist',
+    properties: ["openDirectory"],
+    title: "Select your workspace folder",
+    message:
+      "Choose the folder where you want to run the commands from today's checklist",
   });
 
   if (result.canceled || result.filePaths.length === 0) {
+    writeAppLog("info", "IPC", "select-workspace", { canceled: true });
     return null;
   }
 
+  writeAppLog("info", "IPC", "select-workspace", {
+    canceled: false,
+    pathLength: result.filePaths[0].length,
+  });
+  return result.filePaths[0];
+});
+
+ipcMain.handle("select-upstream-folder", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
+    title: "Select course / upstream repository folder",
+    message: "Choose the root folder of your local clone (e.g. aico-echo)",
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    writeAppLog("info", "IPC", "select-upstream-folder", { canceled: true });
+    return null;
+  }
+
+  writeAppLog("info", "IPC", "select-upstream-folder", {
+    canceled: false,
+    pathLength: result.filePaths[0].length,
+  });
   return result.filePaths[0];
 });
 
@@ -243,66 +371,119 @@ ipcMain.handle('select-workspace', async () => {
  * - Explicit cwd
  * - Preview + confirmation still happens in the UI
  */
-ipcMain.handle('execute-command', (event, command: string, cwd: string) => {
-  return new Promise((resolve) => {
-    // Parse command into executable + args (simple split for v0.5)
-    const [cmd, ...args] = command.split(' ');
-
-    const child = spawn(cmd, args, {
+ipcMain.handle(
+  "execute-command",
+  async (event, command: string, cwd: string) => {
+    writeAppLog("info", "IPC", "execute-command", {
       cwd,
-      shell: true,                // Allows complex commands like "git checkout -b ..."
-      windowsHide: true,
-      timeout: 60000,             // 60 seconds for v0.5
+      commandLength: command.length,
+      command,
     });
 
-    let output = '';
-    let errorOutput = '';
-
-    // Stream stdout
-    child.stdout.on('data', (data) => {
-      const chunk = data.toString();
-      output += chunk;
-      event.sender.send('command-output', { type: 'stdout', data: chunk });
-    });
-
-    // Stream stderr
-    child.stderr.on('data', (data) => {
-      const chunk = data.toString();
-      errorOutput += chunk;
-      event.sender.send('command-output', { type: 'stderr', data: chunk });
-    });
-
-    child.on('close', (code) => {
-      const success = code === 0;
-      event.sender.send('command-complete', {
-        success,
-        output,
-        error: errorOutput || undefined,
-        exitCode: code,
-      });
-
-      resolve({
-        success,
-        output,
-        error: errorOutput || undefined,
-      });
-    });
-
-    child.on('error', (err) => {
-      event.sender.send('command-complete', {
+    if (!cwd || !fs.existsSync(cwd)) {
+      const err =
+        "Workspace folder is missing or invalid. Choose a folder that exists on disk.";
+      writeAppLog("warn", "IPC", "execute-command rejected", { cwd, err });
+      event.sender.send("command-complete", {
         success: false,
-        output,
-        error: err.message,
+        output: "",
+        error: err,
+        exitCode: -1,
+      });
+      return { success: false, output: "", error: err };
+    }
+
+    try {
+      const result = await runShellCommand(command, cwd, {
+        onChunk: (chunk) => event.sender.send("command-output", chunk),
       });
 
-      resolve({
-        success: false,
-        output,
-        error: err.message,
+      writeAppLog(
+        result.success ? "info" : "warn",
+        "IPC",
+        "execute-command finished",
+        {
+          success: result.success,
+          exitCode: result.exitCode,
+          error: result.error,
+          outputChars: result.output?.length ?? 0,
+        },
+      );
+
+      event.sender.send("command-complete", {
+        success: result.success,
+        output: result.output,
+        error: result.error,
+        exitCode: result.exitCode ?? undefined,
       });
+
+      return {
+        success: result.success,
+        output: result.output,
+        error: result.error,
+      };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      writeAppLog("error", "IPC", "execute-command threw", { message });
+      event.sender.send("command-complete", {
+        success: false,
+        output: "",
+        error: message,
+      });
+      return { success: false, output: "", error: message };
+    }
+  },
+);
+
+function targetHasGitDir(dir: string): boolean {
+  return fs.existsSync(path.join(dir, ".git"));
+}
+
+/** Removes a partial clone directory (no `.git`) so a retry can `git clone` again. */
+function removeIncompleteCloneDir(targetDir: string): void {
+  if (!fs.existsSync(targetDir)) return;
+  if (targetHasGitDir(targetDir)) return;
+  try {
+    fs.rmSync(targetDir, { recursive: true, force: true });
+  } catch {
+    /* ignore */
+  }
+}
+
+async function gitSyncCourseRepo(
+  sender: WebContents,
+  repoUrl: string,
+  targetDir: string,
+): Promise<"pull" | "clone"> {
+  if (targetHasGitDir(targetDir)) {
+    sender.send("upstream-status", {
+      message: "Updating existing repo with git pull…",
     });
+    await runGitWithUpstreamProgress(sender, ["pull", "--progress"], {
+      cwd: targetDir,
+    });
+    sender.send("upstream-status", {
+      message: "Pull complete.",
+      percent: 100,
+    });
+    return "pull";
+  }
+
+  sender.send("upstream-status", {
+    message: "Cloning course repo… (GitHub auth may be required)",
   });
-});
+  fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+  await runGitWithUpstreamProgress(
+    sender,
+    ["clone", "--progress", "--", repoUrl, targetDir],
+    { cwd: process.cwd() },
+  );
+  sender.send("upstream-status", {
+    message: "Clone complete.",
+    percent: 100,
+  });
+  return "clone";
+}
 
 /**
  * Handler for 'fetch-upstream-repo'
@@ -312,41 +493,135 @@ ipcMain.handle('execute-command', (event, command: string, cwd: string) => {
  *
  * Security: Same warnings as setup-course.js (PATs, SSH keys). We never store creds.
  */
-ipcMain.handle('fetch-upstream-repo', async (event, repoUrl?: string) => {
-  const { exec } = await import('child_process');
-  const path = await import('path');
-  const fs = await import('fs');
+ipcMain.handle("fetch-upstream-repo", async (event, repoUrl?: string) => {
+  const validated = resolveValidatedUpstreamUrl(repoUrl ?? null);
+  if (!validated.ok) {
+    writeAppLog("warn", "IPC", "fetch-upstream-repo validation failed", {
+      error: validated.error,
+    });
+    return { success: false, error: validated.error };
+  }
+  const url = validated.url;
+  const TARGET_DIR = path.join(
+    process.cwd(),
+    "data",
+    "course-content",
+    "aico-echo",
+  );
 
-  const DEFAULT_UPSTREAM = 'https://github.com/CodePlatoon/aico-echo.git';
-  const url = repoUrl || DEFAULT_UPSTREAM;
-  const TARGET_DIR = path.join(process.cwd(), 'data', 'course-content', 'aico-echo');
+  const { sender } = event;
+
+  writeAppLog("info", "IPC", "fetch-upstream-repo start", {
+    url,
+    targetDir: TARGET_DIR,
+    exists: fs.existsSync(TARGET_DIR),
+    hasGit: targetHasGitDir(TARGET_DIR),
+  });
+
+  const fail = (error: string, code: FetchUpstreamErrorCode) => {
+    writeAppLog("error", "IPC", "fetch-upstream-repo failed", {
+      url,
+      error,
+      code,
+    });
+    return { success: false as const, error, code };
+  };
+
+  const succeed = (msg: string) => {
+    writeReadOnlyUpstreamRecord(fs, path, TARGET_DIR, url);
+    writeAppLog("info", "IPC", "fetch-upstream-repo success", {
+      url,
+      message: msg,
+    });
+    return { success: true as const, message: msg };
+  };
 
   try {
-    if (fs.existsSync(TARGET_DIR)) {
-      // Update existing
-      event.sender.send('upstream-status', { message: 'Updating existing repo with git pull...' });
-      await new Promise((resolve, reject) => {
-        exec('git pull', { cwd: TARGET_DIR }, (err, stdout, stderr) => {
-          if (err) reject(new Error(stderr || err.message));
-          else resolve(stdout);
-        });
-      });
-      return { success: true, message: 'Repo updated successfully via git pull.' };
-    } else {
-      // Clone new
-      event.sender.send('upstream-status', { message: `Cloning ${url} ... (may require auth)` });
-      fs.mkdirSync(path.dirname(TARGET_DIR), { recursive: true });
-      await new Promise((resolve, reject) => {
-        exec(`git clone ${url} ${TARGET_DIR}`, { cwd: process.cwd() }, (err, stdout, stderr) => {
-          if (err) reject(new Error(stderr || err.message));
-          else resolve(stdout);
-        });
-      });
-      return { success: true, message: 'Upstream repo cloned successfully!' };
+    const mode = await gitSyncCourseRepo(sender, url, TARGET_DIR);
+    return succeed(
+      mode === "pull"
+        ? "Repo updated successfully via git pull."
+        : "Upstream repo cloned successfully!",
+    );
+  } catch (err: unknown) {
+    if (!(err instanceof GitCommandError)) {
+      const message =
+        err instanceof Error ? err.message : String(err);
+      return fail(message, "FETCH_FAILED");
     }
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error during fetch.';
-    return { success: false, error: message };
+
+    const gitErr = err;
+
+    if (
+      !isGithubHttpsUrl(url) ||
+      classifyGitRemoteFailure(gitErr.stderr) !== "auth_like"
+    ) {
+      const detail = [gitErr.message, gitErr.stderr].filter(Boolean).join("\n");
+      return fail(detail.trim() || gitErr.message, "FETCH_FAILED");
+    }
+
+    if (!isGhAvailable()) {
+      return fail(
+        "GitHub CLI (gh) is not installed. Install from https://cli.github.com/ and try again.",
+        "GH_CLI_MISSING",
+      );
+    }
+
+    sender.send("upstream-status", {
+      message: UPSTREAM_STATUS_GH.openingBrowser,
+    });
+    const login = await runGhAuthLoginWeb();
+    if (!login.ok) {
+      return fail(login.error, "GH_AUTH_FAILED");
+    }
+
+    sender.send("upstream-status", {
+      message: UPSTREAM_STATUS_GH.configuringGit,
+    });
+    try {
+      await runGhAuthSetupGit();
+    } catch (setupErr: unknown) {
+      const setupMsg =
+        setupErr instanceof Error ? setupErr.message : String(setupErr);
+      logMainWarn("[Main] gh auth setup-git:", setupMsg);
+      writeAppLog("warn", "IPC", "gh auth setup-git failed (continuing)", {
+        message: setupMsg,
+      });
+    }
+
+    const parsed = parseGithubHttpsOwnerRepo(url);
+    if (parsed) {
+      const check = await ghApiRepoCheck(parsed.owner, parsed.repo);
+      if (check === "not_found") {
+        return fail(
+          "GitHub API reports this repository is not visible to the signed-in account (404). Ask your instructor about access or the correct URL.",
+          "NO_REPO_ACCESS",
+        );
+      }
+    }
+
+    removeIncompleteCloneDir(TARGET_DIR);
+
+    sender.send("upstream-status", {
+      message: UPSTREAM_STATUS_GH.retrying,
+    });
+
+    try {
+      const mode = await gitSyncCourseRepo(sender, url, TARGET_DIR);
+      return succeed(
+        mode === "pull"
+          ? "Repo updated successfully via git pull."
+          : "Upstream repo cloned successfully!",
+      );
+    } catch (err2: unknown) {
+      if (err2 instanceof GitCommandError) {
+        const detail = [err2.message, err2.stderr].filter(Boolean).join("\n");
+        return fail(detail.trim() || err2.message, "FETCH_FAILED");
+      }
+      const message =
+        err2 instanceof Error ? err2.message : String(err2);
+      return fail(message, "FETCH_FAILED");
+    }
   }
 });
 
@@ -355,6 +630,9 @@ ipcMain.handle('fetch-upstream-repo', async (event, repoUrl?: string) => {
    ============================================================ */
 
 app.whenReady().then(() => {
+  const logFile = initAppFileLogging();
+  logMainInfo("[Main] Log file:", logFile);
+
   // Dev-only CSP: Vite HMR uses eval, blob workers, and ws:// — see Electron security tutorial.
   // https://www.electronjs.org/docs/latest/tutorial/security
   if (!app.isPackaged) {
@@ -366,26 +644,37 @@ app.whenReady().then(() => {
       "img-src 'self' data: blob:; font-src 'self' data:; " +
       "connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 http://127.0.0.1:5173 http://localhost:5173;";
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Content-Security-Policy': [devCsp],
-        },
-      });
+      const baseUrl = details.url.split(/[?#]/)[0] ?? details.url;
+      const isViteDev =
+        baseUrl.startsWith("http://localhost:5173") ||
+        baseUrl.startsWith("http://127.0.0.1:5173");
+
+      const next: Record<string, string[] | undefined> = {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [devCsp],
+      };
+
+      // Align with Vite server.headers: cross-origin isolation for SharedArrayBuffer in dev.
+      if (isViteDev) {
+        next["Cross-Origin-Opener-Policy"] = ["same-origin"];
+        next["Cross-Origin-Embedder-Policy"] = ["require-corp"];
+      }
+
+      callback({ responseHeaders: next });
     });
   }
 
   createWindow();
 
-  app.on('activate', () => {
+  app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });

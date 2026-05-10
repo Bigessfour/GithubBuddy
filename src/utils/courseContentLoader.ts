@@ -25,18 +25,28 @@ export interface DayFocusContent {
   files: DayFile[];
 }
 
+import { appLog } from "./appLog";
+
 /**
  * Loads the full content of all relevant files in the selected day's folder.
  * Returns null in browser mode or if the folder does not exist.
  */
-export function loadDayFocus(week: number, day: number): DayFocusContent | null {
-  const api = typeof window !== 'undefined' ? window.electronAPI : undefined;
+export function loadDayFocus(
+  week: number,
+  day: number,
+): DayFocusContent | null {
+  const api = typeof window !== "undefined" ? window.electronAPI : undefined;
   if (!api?.getDayFocusContent) {
     return null;
   }
   try {
     return api.getDayFocusContent(week, day);
-  } catch {
+  } catch (e) {
+    appLog("error", "courseContentLoader", "getDayFocusContent threw", {
+      week,
+      day,
+      error: e instanceof Error ? e.message : String(e),
+    });
     return null;
   }
 }

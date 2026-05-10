@@ -1,6 +1,7 @@
 # GitHub Actions Workflow: Automated Testing
 #
-# This workflow runs our Vitest tests on every push and every pull request.
+# This workflow runs ESLint, Vitest with coverage thresholds, production web build, and electron-vite build
+# on every push and every pull request.
 # It is the foundation for the branch protection rule we will enable on `main`.
 #
 # Why we use GitHub Actions (the documented way):
@@ -17,6 +18,9 @@
 
 name: Test
 
+permissions:
+  contents: read
+
 # When should this workflow run?
 # - push to any branch: so we catch broken tests immediately
 # - pull_request targeting any branch: so PRs cannot be merged if tests fail
@@ -24,13 +28,13 @@ name: Test
 # Reference: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
 on:
   push:
-    branches: [ main, 'feat/**' ]
+    branches: [main, "feat/**"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
-    name: Run Tests
+    name: Lint, tests, coverage, web + electron build
     runs-on: ubuntu-latest
 
     steps:
@@ -47,26 +51,50 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       # 3. Install dependencies
       # This is the documented way to ensure a clean, reproducible environment.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
-      # 4. Run the tests
-      # We use the script we defined in package.json ("test": "vitest")
-      # The --run flag makes Vitest exit after running once (important in CI).
-      # If any test fails, this step fails → the workflow fails → the PR cannot be merged.
-      - name: Run Vitest tests
-        run: npm test -- --run
+      # 4. Lint (same gate as local `npm run lint` — see README quality gate)
+      - name: ESLint
+        run: npm run lint
 
-      # 5. (Future) Add linting or build step here if desired
-      # - name: Lint
-      #   run: npm run lint
-      # - name: Build
-      #   run: npm run build
+      # 5. Tests + coverage thresholds (vitest.config.ts)
+      - name: Vitest with coverage
+        run: npm run test:coverage
+
+      # 6. Production web build (tsc + Vite)
+      - name: Build
+        run: npm run build
+
+      # 7. Desktop renderer + main/preload bundle (catches electron-vite regressions; may log known toolchain warnings)
+      - name: Electron build
+        run: npm run electron:build
+
+  playwright:
+    name: Playwright (visual inventory)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run visual presence tests (no screenshot baselines on Linux)
+        run: npm run test:e2e:ci
 #
-# After pushing this workflow, the status check named "Test / Run Tests"
-# will appear in the PR checks and can be required for merging to main.
+# Status checks: "Test / Lint, tests, coverage, web + electron build" and "Test / Playwright (visual inventory)"
