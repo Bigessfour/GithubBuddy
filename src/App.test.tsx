@@ -34,7 +34,7 @@ describe("App", () => {
   it("renders guidance panel when day focus is unavailable", () => {
     render(<App />);
     expect(
-      screen.getByRole("heading", { name: /platoon companion/i }),
+      screen.getByRole("heading", { name: /githubbuddy/i }),
     ).toBeInTheDocument();
     expect(screen.getByText(/step-by-step checklist/i)).toBeInTheDocument();
   });
@@ -145,7 +145,7 @@ describe("App first-run intro", () => {
   it("shows process intro dialog when not dismissed", () => {
     render(<App />);
     expect(
-      screen.getByRole("dialog", { name: /how platoon companion works/i }),
+      screen.getByRole("dialog", { name: /how githubbuddy works/i }),
     ).toBeInTheDocument();
   });
 
@@ -154,7 +154,7 @@ describe("App first-run intro", () => {
     fireEvent.click(screen.getByRole("button", { name: /^got it$/i }));
     expect(localStorage.getItem(STORAGE_INTRO_DISMISSED_V1)).toBe("1");
     expect(
-      screen.queryByRole("dialog", { name: /how platoon companion works/i }),
+      screen.queryByRole("dialog", { name: /how githubbuddy works/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -165,7 +165,7 @@ describe("App first-run intro", () => {
       screen.getByRole("button", { name: /how this works/i }),
     );
     expect(
-      screen.getByRole("dialog", { name: /how platoon companion works/i }),
+      screen.getByRole("dialog", { name: /how githubbuddy works/i }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^got it$/i }));
     expect(localStorage.getItem(STORAGE_INTRO_DISMISSED_V1)).toBe("1");

@@ -136,10 +136,13 @@ export function GuidancePanel({
         unsubOut?.();
         if (!result.success) {
           stoppedEarly = true;
-          const help = formatCommandErrorHelpForLog(
-            result.error,
-            result.exitCode,
-          );
+          const { error: errText, exitCode } = result as {
+            success: boolean;
+            output: string;
+            error?: string;
+            exitCode?: number;
+          };
+          const help = formatCommandErrorHelpForLog(errText, exitCode);
           setBatchLog(
             (prev) =>
               `${prev}\nStopped: command failed.${result.error ? `\n${result.error}` : ""}${help}`,

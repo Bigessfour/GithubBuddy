@@ -26,7 +26,7 @@ export const shellInventory: VisualInventoryItem[] = [
     id: "title-h1",
     description: "App title",
     locator: (p) =>
-      p.getByRole("heading", { level: 1, name: /platoon companion/i }),
+      p.getByRole("heading", { level: 1, name: /githubbuddy/i }),
     appliesWhen: async () => true,
   },
   {
@@ -325,7 +325,7 @@ export const guidanceInventory: VisualInventoryItem[] = [
     locator: (p) =>
       p.getByRole("heading", {
         level: 3,
-        name: /update your local fork from upstream/i,
+        name: /create .*gitignore.*instructor template/i,
       }),
     appliesWhen: async (page) => page.locator(".guidance-header").isVisible(),
   },

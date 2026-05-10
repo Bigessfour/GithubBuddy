@@ -3,18 +3,15 @@
  * Supports common variants beyond strict `week1` / `day1`.
  */
 
+/** Prefix at folder start; allows suffixes like Week14-CICD or Day04-AM. */
 const WEEK_PATTERNS: RegExp[] = [
-  /^week(\d+)$/i,
-  /^week[_-](\d+)$/i,
-  /^week\s+(\d+)$/i,
-  /^w(\d+)$/i,
+  /^week\s*[_-]?\s*(\d+)/i,
+  /^w(\d+)(?:\D|$)/i,
 ];
 
 const DAY_PATTERNS: RegExp[] = [
-  /^day(\d+)$/i,
-  /^day[_-](\d+)$/i,
-  /^day\s+(\d+)$/i,
-  /^d(\d+)$/i,
+  /^day\s*[_-]?\s*(\d+)/i,
+  /^d(\d+)(?:\D|$)/i,
 ];
 
 function firstCapture(name: string, patterns: RegExp[]): number | null {
@@ -29,12 +26,12 @@ function firstCapture(name: string, patterns: RegExp[]): number | null {
   return null;
 }
 
-/** Week folder segment, e.g. `week1`, `week-2`, `Week 3`, `w4`. */
+/** Week folder segment, e.g. `week1`, `Week14-Topic`, `w4`. */
 export function parseWeekFolderName(name: string): number | null {
   return firstCapture(name, WEEK_PATTERNS);
 }
 
-/** Day folder segment, e.g. `day1`, `day-2`, `Day 3`, `d4`. */
+/** Day folder segment, e.g. `day1`, `Day04-AM`, `DAY4PM-topic`, `d4`. */
 export function parseDayFolderName(name: string): number | null {
   return firstCapture(name, DAY_PATTERNS);
 }

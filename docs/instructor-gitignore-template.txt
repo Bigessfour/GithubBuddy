@@ -1,5 +1,5 @@
 # Source: Code Platoon Instructor GIT Challenge Submission Workflow (appendix).
-# Copied into the Platoon Companion repo for students; keep in sync with the instructor guide.
+# Copied into the GithubBuddy repo for students; keep in sync with the instructor guide.
 
 # =========================================================
 # OS FILES

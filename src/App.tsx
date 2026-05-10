@@ -18,7 +18,7 @@ import { appLog } from "./utils/appLog";
 import { ProcessIntroModal } from "./components/ProcessIntroModal";
 
 /**
- * Main Application Component - Platoon Companion
+ * Main Application Component - GithubBuddy
  *
  * This is the root of the UI. It orchestrates:
  * - Day selection via structured dropdowns
@@ -134,7 +134,7 @@ function AppContent() {
       {/* Header with branding and current day indicator */}
       <header className="app-header">
         <div className="header-content">
-          <h1>Platoon Companion</h1>
+          <h1>GithubBuddy</h1>
           <p className="tagline">
             GitHub best practices for Code Platoon AI DevOps
           </p>

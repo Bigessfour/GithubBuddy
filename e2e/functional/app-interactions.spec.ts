@@ -59,7 +59,7 @@ test.describe("First-run process intro", () => {
   test("shows dialog until Got it", async ({ page }) => {
     await page.goto("/");
     const dialog = page.getByRole("dialog", {
-      name: /how platoon companion works/i,
+      name: /how githubbuddy works/i,
     });
     await expect(dialog).toBeVisible();
     await page.getByRole("button", { name: /^got it$/i }).click();

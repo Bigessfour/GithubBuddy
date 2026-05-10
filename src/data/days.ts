@@ -28,9 +28,9 @@ function standardSteps(): Step[] {
       title: "Create .gitignore using the instructor template (one-time)",
       why: "The instructor template ignores OS cruft, IDE files, logs, secrets, build output, node_modules, Python/Java/Go/Rust artifacts, Docker/Terraform noise, and more—so you never commit junk by accident. This matches step 3 in the official workflow.",
       command:
-        "cp /path/to/platoon-companion/docs/instructor-gitignore-template.txt .gitignore",
+        "cp /path/to/GithubBuddy/docs/instructor-gitignore-template.txt .gitignore",
       notes:
-        "Run from your **course fork** root. Replace `/path/to/platoon-companion` with the folder where you cloned **Platoon Companion** (this app). The same template is at `docs/instructor-gitignore-template.txt` inside the Companion repo and matches the instructor Word guide appendix.",
+        "Run from your **course fork** root. Replace `/path/to/GithubBuddy` with the folder where you cloned **GithubBuddy** (this app). The same template is at `docs/instructor-gitignore-template.txt` in this repo and matches the instructor Word guide appendix.",
       category: "terminal",
     },
     {

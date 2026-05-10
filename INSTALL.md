@@ -1,8 +1,8 @@
-# Installation guide — Platoon Companion
+# Installation guide — GithubBuddy
 
 This document is the **short path to a working install** on your machine. For architecture, roadmap, and deep troubleshooting, see [README.md](README.md).
 
-The **GitHub repository** is named **`githubbuddy`**; after `git clone` you normally `cd githubbuddy`. The app title in the UI remains **Platoon Companion**.
+The **GitHub repository** is **`GithubBuddy`** (npm package `githubbuddy`); after `git clone` you normally `cd GithubBuddy` (folder name matches the repo). The app title in the UI is **GithubBuddy**.
 
 ## Requirements
 
@@ -78,7 +78,7 @@ When you run the **desktop** app, runtime logs are appended to a daily file:
 | Development (`npm run electron:dev`) | Project root: `logs/githubbuddy-YYYY-MM-DD.log` |
 | Packaged app (if you build installers later) | OS app data directory: `…/logs/githubbuddy-YYYY-MM-DD.log` |
 
-The `logs/` folder is gitignored except `logs/.gitkeep`. After a desktop session, open today’s file to inspect startup, IPC, and renderer events. Older dev builds may have created `platoon-companion-*.log`; current builds use **`githubbuddy-*.log`**.
+The `logs/` folder is gitignored except `logs/.gitkeep`. After a desktop session, open today’s file to inspect startup, IPC, and renderer events. Older local builds may have used other log filename prefixes; current builds use **`githubbuddy-*.log`**.
 
 **Browser-only** (`npm run dev`) does **not** write to that file; use the browser developer console instead.
 

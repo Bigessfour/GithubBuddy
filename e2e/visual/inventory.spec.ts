@@ -59,14 +59,14 @@ test.describe("Visual inventory (presence)", () => {
     expect(vis, "Expected exactly one primary main layout").toBe(1);
   });
 
-  test("guidance path: checklist chrome and seven steps", async ({ page }) => {
+  test("guidance path: checklist chrome and nine steps", async ({ page }) => {
     await page.goto("/");
     test.skip(
       !(await page.locator(".guidance-header").isVisible()),
       "Course clone present — day-focus replaces guidance in this environment",
     );
     await assertInventory(page, guidanceInventory);
-    await expect(page.locator(".step-card")).toHaveCount(7);
+    await expect(page.locator(".step-card")).toHaveCount(9);
   });
 
   test("day-focus path: materials chrome when clone drives UI", async ({

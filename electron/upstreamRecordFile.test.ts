@@ -55,4 +55,12 @@ describe("upstreamRecordFile", () => {
       ),
     ).toContain("https://github.com/x/y.git");
   });
+
+  it("removes legacy PLATOON_COMPANION_UPSTREAM.txt after writing new marker", () => {
+    const legacy = path.join(root, "PLATOON_COMPANION_UPSTREAM.txt");
+    fs.writeFileSync(legacy, "old marker\n", "utf8");
+    writeReadOnlyUpstreamRecord(fs, path, root, "https://github.com/o/r.git");
+    expect(fs.existsSync(legacy)).toBe(false);
+    expect(fs.existsSync(path.join(root, UPSTREAM_RECORD_FILENAME))).toBe(true);
+  });
 });

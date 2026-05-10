@@ -54,7 +54,7 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
     } else {
       // Fallback for web-only development (prompt is ugly but works)
       const enteredPath = prompt(
-        "Enter the full path to your workspace folder\n(e.g. /Users/you/Code/my-platoon-project)",
+        "Enter the full path to your workspace folder\n(e.g. /Users/you/Code/my-course-fork)",
       );
       if (enteredPath && enteredPath.trim()) {
         const p = enteredPath.trim();
