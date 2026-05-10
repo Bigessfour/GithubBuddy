@@ -41,6 +41,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
   selectWorkspace: (): Promise<string | null> =>
     ipcRenderer.invoke("select-workspace"),
 
+  /** Parent directory for “New folder…” workspace flow (see createWorkspaceFolder). */
+  selectWorkspaceParent: (): Promise<string | null> =>
+    ipcRenderer.invoke("select-workspace-parent"),
+
+  /**
+   * Create a single new folder under `parentPath` (main process only).
+   * Renderer should prompt for `folderName` first.
+   */
+  createWorkspaceFolder: (
+    parentPath: string,
+    folderName: string,
+  ): Promise<
+    { ok: true; path: string } | { ok: false; error: string }
+  > => ipcRenderer.invoke("create-workspace-folder", parentPath, folderName),
+
   /** Native folder picker for the local course/upstream clone (copy source paths). */
   selectUpstreamFolder: (): Promise<string | null> =>
     ipcRenderer.invoke("select-upstream-folder"),

@@ -315,10 +315,10 @@ function createWindow() {
  */
 ipcMain.handle("select-workspace", async () => {
   const result = await dialog.showOpenDialog({
-    properties: ["openDirectory"],
+    properties: ["openDirectory", "createDirectory"],
     title: "Select your workspace folder",
     message:
-      "Choose the folder where you want to run the commands from today's checklist",
+      "Choose the folder where you want to run the commands from today's checklist. (On macOS you can use New Folder in the dialog.)",
   });
 
   if (result.canceled || result.filePaths.length === 0) {
@@ -335,9 +335,10 @@ ipcMain.handle("select-workspace", async () => {
 
 ipcMain.handle("select-upstream-folder", async () => {
   const result = await dialog.showOpenDialog({
-    properties: ["openDirectory"],
+    properties: ["openDirectory", "createDirectory"],
     title: "Select course / upstream repository folder",
-    message: "Choose the root folder of your local clone (e.g. aico-echo)",
+    message:
+      "Choose the root folder of your local clone (e.g. aico-echo). (On macOS you can use New Folder in the dialog.)",
   });
 
   if (result.canceled || result.filePaths.length === 0) {
@@ -351,6 +352,83 @@ ipcMain.handle("select-upstream-folder", async () => {
   });
   return result.filePaths[0];
 });
+
+/**
+ * Pick a parent directory, then renderer prompts for a name and calls
+ * `create-workspace-folder` — keeps mkdir in the trusted main process.
+ */
+ipcMain.handle("select-workspace-parent", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory", "createDirectory"],
+    title: "Choose where to create your workspace folder",
+    message:
+      "Select the parent folder (for example Documents or your Code folder). You will name the new folder next.",
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    writeAppLog("info", "IPC", "select-workspace-parent", { canceled: true });
+    return null;
+  }
+
+  writeAppLog("info", "IPC", "select-workspace-parent", {
+    canceled: false,
+    pathLength: result.filePaths[0].length,
+  });
+  return result.filePaths[0];
+});
+
+function sanitizeWorkspaceFolderName(raw: string): string | null {
+  const t = raw.trim().replace(/[/\\:\0]/g, "");
+  if (!t || t === "." || t === "..") return null;
+  return t;
+}
+
+ipcMain.handle(
+  "create-workspace-folder",
+  async (_event, parentPath: unknown, folderName: unknown) => {
+    if (typeof parentPath !== "string" || typeof folderName !== "string") {
+      return { ok: false as const, error: "Invalid arguments" };
+    }
+    const safeName = sanitizeWorkspaceFolderName(folderName);
+    if (!safeName) {
+      return { ok: false as const, error: "Use a simple folder name (no slashes)." };
+    }
+
+    let resolvedParent: string;
+    try {
+      resolvedParent = path.resolve(parentPath);
+    } catch {
+      return { ok: false as const, error: "Invalid parent path" };
+    }
+
+    const target = path.resolve(resolvedParent, safeName);
+    if (path.dirname(target) !== resolvedParent) {
+      return { ok: false as const, error: "Invalid folder name" };
+    }
+
+    try {
+      await fs.promises.mkdir(target, { recursive: false });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      writeAppLog("warn", "IPC", "create-workspace-folder", {
+        error: msg,
+        target,
+      });
+      return {
+        ok: false as const,
+        error:
+          msg.includes("EEXIST") || msg.includes("already exists")
+            ? "A folder with that name already exists there. Pick another name or parent."
+            : `Could not create folder: ${msg}`,
+      };
+    }
+
+    writeAppLog("info", "IPC", "create-workspace-folder", {
+      pathLength: target.length,
+    });
+    return { ok: true as const, path: target };
+  },
+);
 
 /**
  * Handler for 'execute-command' (v0.5 Streaming Version)

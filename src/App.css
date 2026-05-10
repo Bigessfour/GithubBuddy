@@ -447,6 +447,120 @@
   color: var(--text);
 }
 
+/* Day focus: course markdown from local clone */
+.day-focus {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.day-focus-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  color: var(--text-h);
+}
+
+.day-focus-subtitle {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.day-focus .file-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.day-focus .file-tab {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.day-focus .file-tab:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.day-focus .file-tab.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.day-focus .file-content .file-header h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: var(--text-h);
+  font-family: var(--mono);
+}
+
+.day-focus-read-controls {
+  margin-bottom: 10px;
+}
+
+.day-focus-height-label {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.day-focus-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.day-focus-slider-row input[type="range"] {
+  flex: 1;
+  min-width: 120px;
+  height: 8px;
+  accent-color: #2563eb;
+}
+
+.day-focus-height-tick {
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.day-focus-scroll {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  outline: none;
+}
+
+.day-focus-scroll:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-border);
+}
+
+.day-focus-scroll .markdown-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+
 .guidance-header {
   margin-bottom: 24px;
 }
@@ -1009,6 +1123,47 @@
   font-size: 13px;
   color: var(--text);
   font-style: italic;
+}
+
+.workspace-new-folder-hint {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted, var(--text));
+  margin: 0 0 14px;
+}
+
+.workspace-new-folder-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.workspace-new-folder-button:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Course / upstream: multi-paragraph help above the path row */
+.upstream-help-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.upstream-help-copy p {
+  margin: 0;
+}
+
+.upstream-help-copy .workspace-explanation {
+  margin-bottom: 0;
 }
 
 .upstream-path-row {

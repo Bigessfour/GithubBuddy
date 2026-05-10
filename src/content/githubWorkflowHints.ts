@@ -28,9 +28,11 @@ export const WORKFLOW_TOOLTIPS = {
     "Pick your fork or project folder on disk. Commands run here (your cwd). GitHub recommends working in a local clone of your fork, not the upstream repo directly.",
   workspaceClear:
     "Clear the saved path. Run buttons stay off until you choose a folder again.",
+  workspaceNewFolder:
+    "Pick a parent folder, name your new workspace folder, then we create it and set it as your workspace. (You can also use New Folder inside the desktop folder picker.)",
 
   upstreamPath:
-    "Path to your local clone of the course/upstream repo. Used only to fill {{UPSTREAM}} in copy/paste commands—not where shell commands execute.",
+    "Local folder path to your course repo clone (e.g. aico-echo), not a GitHub URL. Fills {{UPSTREAM}} in copied commands only; your workspace folder is still where Run/cwd executes.",
   upstreamSave:
     "Store this path in the app (and browser storage) so {{UPSTREAM}} resolves in the checklist.",
   upstreamBrowse:
@@ -80,6 +82,11 @@ export const WORKFLOW_TOASTS = {
     "Could not copy. Select the command text manually or check clipboard permissions.",
   workspaceSet:
     "Workspace folder saved. Commands will use it as the working directory.",
+  workspaceFolderCreated:
+    "New folder created and set as your workspace.",
+  workspaceFolderCreateFailed: "Could not create workspace folder.",
+  workspaceNewFolderWeb:
+    "In the browser preview, create a folder in Finder or File Explorer, then use Choose workspace folder and type or paste its full path.",
   upstreamSaved:
     "Upstream path saved. {{UPSTREAM}} in steps will use this folder.",
   upstreamCleared: "Upstream path cleared.",

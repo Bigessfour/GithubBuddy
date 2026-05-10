@@ -71,6 +71,37 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
     onWorkspaceChange(null);
   };
 
+  const handleCreateNewWorkspaceFolder = async () => {
+    const api = window.electronAPI;
+    if (!api?.selectWorkspaceParent || !api?.createWorkspaceFolder) {
+      showToast(WORKFLOW_TOASTS.workspaceNewFolderWeb, "info");
+      return;
+    }
+
+    const parent = await api.selectWorkspaceParent();
+    if (!parent) return;
+
+    const name = window.prompt(
+      "Name for your new workspace folder (created inside the folder you just picked):",
+      "my-course-workspace",
+    );
+    if (!name?.trim()) return;
+
+    const result = await api.createWorkspaceFolder(parent, name.trim());
+    if (result.ok) {
+      appLog("info", "WorkspaceSelector", "new workspace folder created", {
+        pathLength: result.path.length,
+      });
+      onWorkspaceChange(result.path);
+      showToast(WORKFLOW_TOASTS.workspaceFolderCreated, "success");
+    } else {
+      showToast(
+        `${WORKFLOW_TOASTS.workspaceFolderCreateFailed} ${result.error}`,
+        "error",
+      );
+    }
+  };
+
   return (
     <div className="workspace-selector">
       <h3>Workspace Folder</h3>
@@ -78,6 +109,13 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
         Choose the folder on your computer where you want the commands from
         today&apos;s checklist to run. This is required before you can use the{" "}
         <strong>Run</strong> buttons.
+      </p>
+      <p className="workspace-new-folder-hint">
+        <strong>Need a new folder?</strong> In the desktop app, use{" "}
+        <strong>New folder…</strong> to pick a parent location and name — we
+        create it and set it as your workspace. You can also use{" "}
+        <strong>New Folder</strong> inside the system dialog when choosing a
+        folder.
       </p>
 
       <div className="workspace-actions">
@@ -90,6 +128,16 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
             {workspacePath
               ? "Change Workspace Folder"
               : "Choose Workspace Folder"}
+          </button>
+        </Tooltip>
+
+        <Tooltip text={WORKFLOW_TOOLTIPS.workspaceNewFolder}>
+          <button
+            type="button"
+            onClick={() => void handleCreateNewWorkspaceFolder()}
+            className="workspace-new-folder-button"
+          >
+            New folder…
           </button>
         </Tooltip>
 

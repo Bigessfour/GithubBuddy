@@ -120,6 +120,22 @@ export const shellInventory: VisualInventoryItem[] = [
     appliesWhen: async () => true,
   },
   {
+    id: "workspace-new-folder-hint",
+    description: "Short copy about creating a new workspace folder",
+    locator: (p) =>
+      p
+        .locator(".workspace-selector:not(.upstream-path-selector)")
+        .locator(".workspace-new-folder-hint"),
+    appliesWhen: async () => true,
+  },
+  {
+    id: "workspace-new-folder-button",
+    description: "New folder (parent picker + name) in desktop app",
+    locator: (p) =>
+      p.getByRole("button", { name: /new folder/i }),
+    appliesWhen: async () => true,
+  },
+  {
     id: "workspace-hint-or-path",
     description: "Workspace empty hint or selected path display",
     locator: (p) =>
@@ -460,6 +476,19 @@ export const dayFocusInventory: VisualInventoryItem[] = [
     locator: (p) => p.locator(".day-focus pre.markdown-content"),
     appliesWhen: async (page) => page.locator(".day-focus").isVisible(),
   },
+  {
+    id: "day-focus-read-height-slider",
+    description: "Slider to resize scrollable lesson/readme viewport",
+    locator: (p) =>
+      p.getByRole("slider", { name: /reading area height in pixels/i }),
+    appliesWhen: async (page) => page.locator(".day-focus").isVisible(),
+  },
+  {
+    id: "day-focus-scroll-region",
+    description: "Scrollable region wrapping markdown pre",
+    locator: (p) => p.locator(".day-focus-scroll"),
+    appliesWhen: async (page) => page.locator(".day-focus").isVisible(),
+  },
 ];
 
 /** Empty state when `getDayGuidance` returns undefined for the selected week/day. */
@@ -481,7 +510,9 @@ export const noGuidanceInventory: VisualInventoryItem[] = [
     id: "no-guidance-clone-hint",
     description: "Clone path hint",
     locator: (p) =>
-      p.getByText(/data\/course-content\/aico-echo/i),
+      p
+        .locator(".no-guidance")
+        .getByText(/data\/course-content\/aico-echo/i),
     appliesWhen: async (page) => page.locator(".no-guidance").isVisible(),
   },
 ];

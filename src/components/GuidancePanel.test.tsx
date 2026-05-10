@@ -4,6 +4,7 @@ import { GuidancePanel } from "./GuidancePanel";
 import { getDayGuidance } from "../data/days";
 import type { DayGuidance } from "../types";
 import { renderWithToast } from "../test/renderWithToast";
+import { workspaceFolderIpcStubs } from "../test/workspaceFolderIpcStubs";
 import { WORKFLOW_TOASTS } from "../content/githubWorkflowHints";
 
 describe("GuidancePanel", () => {
@@ -76,6 +77,7 @@ describe("GuidancePanel", () => {
       .mockResolvedValueOnce({ success: true, output: "" })
       .mockResolvedValueOnce({ success: false, error: "git said no" });
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand,
@@ -111,6 +113,7 @@ describe("GuidancePanel", () => {
   it("Run all catches executeCommand rejection", async () => {
     const executeCommand = vi.fn().mockRejectedValueOnce(new Error("ipc"));
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand,
@@ -145,6 +148,7 @@ describe("GuidancePanel", () => {
   it("Run all does nothing when user cancels confirm", () => {
     const executeCommand = vi.fn();
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand,
@@ -176,6 +180,7 @@ describe("GuidancePanel", () => {
       .fn()
       .mockResolvedValue({ success: true, output: "" });
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand,

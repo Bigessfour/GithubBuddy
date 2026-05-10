@@ -174,7 +174,10 @@ function AppContent() {
 
         {/* v0.6: Dynamic Day Focus from upstream repo (full content) */}
         {dayFocus ? (
-          <DayFocus focus={dayFocus} />
+          <DayFocus
+            key={`${dayFocus.week}-${dayFocus.day}`}
+            focus={dayFocus}
+          />
         ) : guidance ? (
           <GuidancePanel
             key={`${selectedWeek}-${selectedDay}`}

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent } from "@testing-library/react";
 import { WorkspaceSelector } from "./WorkspaceSelector";
 import { renderWithToast } from "../test/renderWithToast";
+import { WORKFLOW_TOASTS } from "../content/githubWorkflowHints";
 
 describe("WorkspaceSelector", () => {
   beforeEach(() => {
@@ -52,6 +53,8 @@ describe("WorkspaceSelector", () => {
     const onWorkspaceChange = vi.fn();
     window.electronAPI = {
       selectWorkspace: vi.fn().mockResolvedValue(null),
+      selectWorkspaceParent: vi.fn().mockResolvedValue(null),
+      createWorkspaceFolder: vi.fn().mockResolvedValue({ ok: false, error: "" }),
       selectUpstreamFolder: vi.fn().mockResolvedValue(null),
       executeCommand: vi.fn().mockResolvedValue({ success: true, output: "" }),
       getCourseContentScan: vi
@@ -91,6 +94,8 @@ describe("WorkspaceSelector", () => {
     const onWorkspaceChange = vi.fn();
     window.electronAPI = {
       selectWorkspace: vi.fn().mockResolvedValue("/electron/pick"),
+      selectWorkspaceParent: vi.fn().mockResolvedValue(null),
+      createWorkspaceFolder: vi.fn().mockResolvedValue({ ok: false, error: "" }),
       selectUpstreamFolder: vi.fn().mockResolvedValue(null),
       executeCommand: vi.fn().mockResolvedValue({ success: true, output: "" }),
       getCourseContentScan: vi
@@ -113,5 +118,169 @@ describe("WorkspaceSelector", () => {
     await vi.waitFor(() => {
       expect(onWorkspaceChange).toHaveBeenCalledWith("/electron/pick");
     });
+  });
+
+  it("shows web hint toast when New folder is clicked without Electron folder APIs", async () => {
+    const onWorkspaceChange = vi.fn();
+    window.electronAPI = {
+      selectWorkspace: vi.fn().mockResolvedValue(null),
+      selectUpstreamFolder: vi.fn().mockResolvedValue(null),
+      executeCommand: vi.fn().mockResolvedValue({ success: true, output: "" }),
+      getCourseContentScan: vi
+        .fn()
+        .mockReturnValue({ hasLocal: false, weeks: [] }),
+      getDayFocusContent: vi.fn().mockReturnValue(null),
+      fetchUpstreamRepo: vi.fn().mockResolvedValue({ success: true }),
+    } as unknown as NonNullable<Window["electronAPI"]>;
+
+    renderWithToast(
+      <WorkspaceSelector
+        workspacePath={null}
+        onWorkspaceChange={onWorkspaceChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /new folder/i }));
+
+    expect(
+      await screen.findByText(WORKFLOW_TOASTS.workspaceNewFolderWeb),
+    ).toBeInTheDocument();
+    expect(onWorkspaceChange).not.toHaveBeenCalled();
+  });
+
+  it("creates workspace folder in Electron and updates path", async () => {
+    const onWorkspaceChange = vi.fn();
+    window.electronAPI = {
+      selectWorkspace: vi.fn().mockResolvedValue(null),
+      selectWorkspaceParent: vi.fn().mockResolvedValue("/Users/student/Code"),
+      createWorkspaceFolder: vi.fn().mockResolvedValue({
+        ok: true,
+        path: "/Users/student/Code/my-ws",
+      }),
+      selectUpstreamFolder: vi.fn().mockResolvedValue(null),
+      executeCommand: vi.fn().mockResolvedValue({ success: true, output: "" }),
+      getCourseContentScan: vi
+        .fn()
+        .mockReturnValue({ hasLocal: false, weeks: [] }),
+      getDayFocusContent: vi.fn().mockReturnValue(null),
+      fetchUpstreamRepo: vi.fn().mockResolvedValue({ success: true }),
+    };
+    const promptSpy = vi
+      .spyOn(window, "prompt")
+      .mockReturnValue("  my-ws  ");
+
+    renderWithToast(
+      <WorkspaceSelector
+        workspacePath={null}
+        onWorkspaceChange={onWorkspaceChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /new folder/i }));
+
+    await vi.waitFor(() => {
+      expect(window.electronAPI?.createWorkspaceFolder).toHaveBeenCalledWith(
+        "/Users/student/Code",
+        "my-ws",
+      );
+    });
+    expect(onWorkspaceChange).toHaveBeenCalledWith("/Users/student/Code/my-ws");
+    expect(
+      await screen.findByText(WORKFLOW_TOASTS.workspaceFolderCreated),
+    ).toBeInTheDocument();
+    promptSpy.mockRestore();
+  });
+
+  it("does nothing when parent folder dialog is cancelled for New folder", async () => {
+    const onWorkspaceChange = vi.fn();
+    window.electronAPI = {
+      selectWorkspace: vi.fn().mockResolvedValue(null),
+      selectWorkspaceParent: vi.fn().mockResolvedValue(null),
+      createWorkspaceFolder: vi.fn(),
+      selectUpstreamFolder: vi.fn().mockResolvedValue(null),
+      executeCommand: vi.fn().mockResolvedValue({ success: true, output: "" }),
+      getCourseContentScan: vi
+        .fn()
+        .mockReturnValue({ hasLocal: false, weeks: [] }),
+      getDayFocusContent: vi.fn().mockReturnValue(null),
+      fetchUpstreamRepo: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    renderWithToast(
+      <WorkspaceSelector
+        workspacePath={null}
+        onWorkspaceChange={onWorkspaceChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /new folder/i }));
+
+    await vi.waitFor(() =>
+      expect(window.electronAPI?.selectWorkspaceParent).toHaveBeenCalled(),
+    );
+    expect(window.electronAPI?.createWorkspaceFolder).not.toHaveBeenCalled();
+    expect(onWorkspaceChange).not.toHaveBeenCalled();
+  });
+
+  it("does not create folder when name prompt is empty", async () => {
+    const onWorkspaceChange = vi.fn();
+    window.electronAPI = {
+      selectWorkspace: vi.fn().mockResolvedValue(null),
+      selectWorkspaceParent: vi.fn().mockResolvedValue("/parent"),
+      createWorkspaceFolder: vi.fn(),
+      selectUpstreamFolder: vi.fn().mockResolvedValue(null),
+      executeCommand: vi.fn().mockResolvedValue({ success: true, output: "" }),
+      getCourseContentScan: vi
+        .fn()
+        .mockReturnValue({ hasLocal: false, weeks: [] }),
+      getDayFocusContent: vi.fn().mockReturnValue(null),
+      fetchUpstreamRepo: vi.fn().mockResolvedValue({ success: true }),
+    };
+    vi.spyOn(window, "prompt").mockReturnValue("   ");
+
+    renderWithToast(
+      <WorkspaceSelector
+        workspacePath={null}
+        onWorkspaceChange={onWorkspaceChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /new folder/i }));
+
+    await vi.waitFor(() =>
+      expect(window.electronAPI?.selectWorkspaceParent).toHaveBeenCalled(),
+    );
+    expect(window.electronAPI?.createWorkspaceFolder).not.toHaveBeenCalled();
+    expect(onWorkspaceChange).not.toHaveBeenCalled();
+  });
+
+  it("shows error toast when createWorkspaceFolder fails", async () => {
+    const onWorkspaceChange = vi.fn();
+    window.electronAPI = {
+      selectWorkspace: vi.fn().mockResolvedValue(null),
+      selectWorkspaceParent: vi.fn().mockResolvedValue("/parent"),
+      createWorkspaceFolder: vi
+        .fn()
+        .mockResolvedValue({ ok: false, error: "already exists" }),
+      selectUpstreamFolder: vi.fn().mockResolvedValue(null),
+      executeCommand: vi.fn().mockResolvedValue({ success: true, output: "" }),
+      getCourseContentScan: vi
+        .fn()
+        .mockReturnValue({ hasLocal: false, weeks: [] }),
+      getDayFocusContent: vi.fn().mockReturnValue(null),
+      fetchUpstreamRepo: vi.fn().mockResolvedValue({ success: true }),
+    };
+    vi.spyOn(window, "prompt").mockReturnValue("dup");
+
+    renderWithToast(
+      <WorkspaceSelector
+        workspacePath={null}
+        onWorkspaceChange={onWorkspaceChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /new folder/i }));
+
+    expect(
+      await screen.findByText(
+        `${WORKFLOW_TOASTS.workspaceFolderCreateFailed} already exists`,
+      ),
+    ).toBeInTheDocument();
+    expect(onWorkspaceChange).not.toHaveBeenCalled();
   });
 });
