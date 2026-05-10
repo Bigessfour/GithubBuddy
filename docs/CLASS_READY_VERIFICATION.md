@@ -12,7 +12,9 @@ This file is the **audit trail** for “unverified” release items (metadata, h
 
 **Green run (same PR):** [run 25637912960](https://github.com/Bigessfour/GithubBuddy/actions/runs/25637912960) — both **Lint, tests, coverage, web + electron build** and **Playwright (inventory + interactions)** passed.
 
-## 2. First real merged PR (integration into `main`)
+## 2. Merged PRs on `main` (merge commits)
+
+**PR #1 — polish line into `main`**
 
 | Field | Value |
 | --- | --- |
@@ -20,6 +22,14 @@ This file is the **audit trail** for “unverified” release items (metadata, h
 | Merge commit | `5f6880b3038ef70a269c87a7400847fc0c0c2e79` |
 | Merged at | `2026-05-10T19:42:27Z` |
 | Strategy | **Merge commit** (not squash), so `git log --merges` shows upstream integration explicitly |
+
+**PR #2 — this verification doc**
+
+| Field | Value |
+| --- | --- |
+| PR | [#2 — docs: class-ready verification audit trail](https://github.com/Bigessfour/GithubBuddy/pull/2) |
+| Merge commit | `fcd12bbd2b1d5a71281e07f2e1150a561fd54ddc` |
+| Merged at | `2026-05-10T19:48:38Z` |
 
 ## 3. GitHub repository metadata (About)
 
@@ -57,16 +67,21 @@ Configured with:
 
 ## 5. Git tag and GitHub Release (`v0.6.0`)
 
-After this document merges to `main`, the maintainer should:
+**Done (2026-05-10).**
+
+| Item | Value |
+| --- | --- |
+| Annotated tag | `v0.6.0` → commit `fcd12bbd2b1d5a71281e07f2e1150a561fd54ddc` (same as `main` at merge of PR #2) |
+| Release | [github.com/Bigessfour/GithubBuddy/releases/tag/v0.6.0](https://github.com/Bigessfour/GithubBuddy/releases/tag/v0.6.0) |
+
+Commands used:
 
 ```bash
 git checkout main && git pull
-git tag -a v0.6.0 -m "v0.6.0"
+git tag -a v0.6.0 -m "v0.6.0 — Platoon Companion (githubbuddy)"
 git push origin v0.6.0
-gh release create v0.6.0 --title "v0.6.0" --generate-notes
+gh release create v0.6.0 --repo Bigessfour/GithubBuddy --title "v0.6.0" --notes "…"
 ```
-
-Update this section with the tag SHA once pushed (see §6).
 
 ## 6. Commands to re-verify locally
 
