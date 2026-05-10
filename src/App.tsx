@@ -7,13 +7,18 @@ import { DayFocus } from "./components/DayFocus";
 import { GuidancePanel } from "./components/GuidancePanel";
 import { useDayGuidance } from "./hooks/useDayGuidance";
 import { useDayFocus } from "./hooks/useDayFocus";
-import { STORAGE_UPSTREAM, STORAGE_WORKSPACE } from "./constants/storage";
+import {
+  STORAGE_UPSTREAM,
+  STORAGE_WORKSPACE,
+  isIntroDismissed,
+} from "./constants/storage";
 import { readStoredPath } from "./utils/readStoredPath";
 import { ToastProvider } from "./context/ToastProvider";
 import { appLog } from "./utils/appLog";
+import { ProcessIntroModal } from "./components/ProcessIntroModal";
 
 /**
- * Main Application Component - Platoon Companion
+ * Main Application Component - GithubBuddy
  *
  * This is the root of the UI. It orchestrates:
  * - Day selection via structured dropdowns
@@ -43,6 +48,22 @@ function AppContent() {
   useEffect(() => {
     appLog("info", "App", "App component mounted");
   }, []);
+
+  const [showIntroModal, setShowIntroModal] = useState(
+    () => !isIntroDismissed(),
+  );
+  const [introPersistOnClose, setIntroPersistOnClose] = useState(
+    () => !isIntroDismissed(),
+  );
+
+  const closeIntroModal = () => {
+    setShowIntroModal(false);
+  };
+
+  const openIntroHelp = () => {
+    setIntroPersistOnClose(false);
+    setShowIntroModal(true);
+  };
 
   // === State ===
   // The currently chosen week and day. Changing these triggers guidance lookup and progress restore.
@@ -105,10 +126,15 @@ function AppContent() {
 
   return (
     <div className="app-container">
+      <ProcessIntroModal
+        open={showIntroModal}
+        persistDismissOnClose={introPersistOnClose}
+        onClose={closeIntroModal}
+      />
       {/* Header with branding and current day indicator */}
       <header className="app-header">
         <div className="header-content">
-          <h1>Platoon Companion</h1>
+          <h1>GithubBuddy</h1>
           <p className="tagline">
             GitHub best practices for Code Platoon AI DevOps
           </p>
@@ -148,7 +174,10 @@ function AppContent() {
 
         {/* v0.6: Dynamic Day Focus from upstream repo (full content) */}
         {dayFocus ? (
-          <DayFocus focus={dayFocus} />
+          <DayFocus
+            key={`${dayFocus.week}-${dayFocus.day}`}
+            focus={dayFocus}
+          />
         ) : guidance ? (
           <GuidancePanel
             key={`${selectedWeek}-${selectedDay}`}
@@ -178,6 +207,13 @@ function AppContent() {
           Built for Code Platoon • Always PR to your fork first • Practice makes
           permanent
         </p>
+        <button
+          type="button"
+          className="footer-how-it-works"
+          onClick={openIntroHelp}
+        >
+          How this works
+        </button>
       </footer>
     </div>
   );

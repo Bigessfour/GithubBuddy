@@ -1,10 +1,12 @@
-# Platoon Companion – Workspace Rules
+# GithubBuddy – Workspace Rules
 
-This file defines the coding standards, architectural decisions, and workflow rules for the Platoon Companion project. These rules are automatically loaded by Cursor for this workspace.
+**GitHub repo:** `GithubBuddy` (npm package `githubbuddy`). **Product name in UI:** GithubBuddy.
+
+This file defines the coding standards, architectural decisions, and workflow rules for the GithubBuddy project. These rules are automatically loaded by Cursor for this workspace.
 
 ## Project Overview
 
-Platoon Companion is an educational desktop/web application that teaches Code Platoon students professional GitHub and terminal workflows through guided, interactive checklists.
+GithubBuddy is an educational desktop/web application that teaches Code Platoon students professional GitHub and terminal workflows through guided, interactive checklists.
 
 **Core Tech Stack:**
 - React 19 + TypeScript
@@ -88,5 +90,5 @@ Platoon Companion is an educational desktop/web application that teaches Code Pl
 
 ---
 
-**Last Updated:** May 9, 2026
+**Last Updated:** May 10, 2026
 **Maintained by:** Code Platoon AI DevOps cohort project

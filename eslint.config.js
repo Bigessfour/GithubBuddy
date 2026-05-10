@@ -12,6 +12,9 @@ export default defineConfig([
     "out",
     "dist-electron",
     "data",
+    // Finder / editor “duplicate” filenames (e.g. `foo 2.tsx`, `.gitattributes 2`) — not part of the project tree
+    "**/* 2",
+    "**/* 2.*",
   ]),
   {
     files: ["e2e/**/*.ts"],

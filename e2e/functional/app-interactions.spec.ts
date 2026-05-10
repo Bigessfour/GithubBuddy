@@ -5,6 +5,12 @@ import { test, expect } from "@playwright/test";
  * Complements `e2e/visual/inventory.spec.ts`, which asserts presence of many controls.
  */
 test.describe("App interactions (browser)", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("githubbuddy-intro-dismissed-v1", "1");
+    });
+  });
+
   test("header day badge tracks week and day selectors", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator(".current-day-badge")).toHaveText("Week 2 Day 4");
@@ -40,5 +46,26 @@ test.describe("App interactions (browser)", () => {
     await expect(checkbox).toBeChecked();
     await checkbox.click();
     await expect(checkbox).not.toBeChecked();
+  });
+});
+
+test.describe("First-run process intro", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.removeItem("githubbuddy-intro-dismissed-v1");
+    });
+  });
+
+  test("shows dialog until Got it", async ({ page }) => {
+    await page.goto("/");
+    const dialog = page.getByRole("dialog", {
+      name: /how githubbuddy works/i,
+    });
+    await expect(dialog).toBeVisible();
+    await page.getByRole("button", { name: /^got it$/i }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /how this works/i }),
+    ).toBeVisible();
   });
 });

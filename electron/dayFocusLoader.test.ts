@@ -27,6 +27,7 @@ import { loadDayFocusFromDisk } from "./dayFocusLoader";
 describe("loadDayFocusFromDisk", () => {
   beforeEach(() => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.readdirSync).mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -34,10 +35,21 @@ describe("loadDayFocusFromDisk", () => {
   });
 
   it("returns null when day folder missing", () => {
+    vi.mocked(fs.readdirSync).mockReturnValue([]);
     expect(loadDayFocusFromDisk(2, 1)).toBeNull();
   });
 
   it("returns null when path is not a directory", () => {
+    vi.mocked(fs.readdirSync).mockImplementation((dir: fs.PathLike) => {
+      const s = String(dir).replace(/\\/g, "/");
+      if (s.endsWith("aico-echo")) {
+        return [{ name: "week2", isDirectory: () => true } as fs.Dirent];
+      }
+      if (s.endsWith("week2")) {
+        return [{ name: "day1", isDirectory: () => true } as fs.Dirent];
+      }
+      return [];
+    });
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.statSync).mockReturnValue({
       isDirectory: () => false,
@@ -46,15 +58,27 @@ describe("loadDayFocusFromDisk", () => {
   });
 
   it("orders markdown files with priority list first", () => {
+    vi.mocked(fs.readdirSync).mockImplementation((dir: fs.PathLike) => {
+      const s = String(dir).replace(/\\/g, "/");
+      if (s.endsWith("aico-echo")) {
+        return [{ name: "week1", isDirectory: () => true } as fs.Dirent];
+      }
+      if (s.endsWith("week1")) {
+        return [{ name: "day2", isDirectory: () => true } as fs.Dirent];
+      }
+      if (s.endsWith("day2")) {
+        return [
+          { name: "z.md", isFile: () => true } as fs.Dirent,
+          { name: "lesson.md", isFile: () => true } as fs.Dirent,
+          { name: "README.md", isFile: () => true } as fs.Dirent,
+        ];
+      }
+      return [];
+    });
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.statSync).mockReturnValue({
       isDirectory: () => true,
     } as fs.Stats);
-    vi.mocked(fs.readdirSync).mockReturnValue([
-      { name: "z.md", isFile: () => true } as fs.Dirent,
-      { name: "lesson.md", isFile: () => true } as fs.Dirent,
-      { name: "README.md", isFile: () => true } as fs.Dirent,
-    ]);
     vi.mocked(fs.readFileSync).mockImplementation(
       (p: fs.PathOrFileDescriptor) => {
         if (String(p).endsWith("README.md")) return "R";
@@ -73,11 +97,24 @@ describe("loadDayFocusFromDisk", () => {
   });
 
   it("returns null when read fails", () => {
+    vi.mocked(fs.readdirSync).mockImplementation((dir: fs.PathLike) => {
+      const s = String(dir).replace(/\\/g, "/");
+      if (s.endsWith("aico-echo")) {
+        return [{ name: "week1", isDirectory: () => true } as fs.Dirent];
+      }
+      if (s.endsWith("week1")) {
+        return [{ name: "day1", isDirectory: () => true } as fs.Dirent];
+      }
+      if (s.endsWith("day1")) {
+        return [{ name: "lesson.md", isFile: () => true } as fs.Dirent];
+      }
+      return [];
+    });
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.statSync).mockReturnValue({
       isDirectory: () => true,
     } as fs.Stats);
-    vi.mocked(fs.readdirSync).mockImplementation(() => {
+    vi.mocked(fs.readFileSync).mockImplementation(() => {
       throw new Error("io");
     });
     const err = vi.spyOn(console, "error").mockImplementation(() => {});

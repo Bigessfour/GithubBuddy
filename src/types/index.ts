@@ -1,5 +1,5 @@
 /**
- * Type definitions for Platoon Companion daily guidance system.
+ * Type definitions for GithubBuddy daily guidance system.
  *
  * These interfaces define the shape of all data used in the app.
  * Using TypeScript interfaces provides:

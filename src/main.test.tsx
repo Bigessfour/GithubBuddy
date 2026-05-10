@@ -15,7 +15,7 @@ describe("main.tsx bootstrap", () => {
     document.body.innerHTML = '<div id="root"></div>';
     await import("./main.tsx");
     await waitFor(() => {
-      expect(document.body.textContent).toMatch(/Platoon Companion/i);
+      expect(document.body.textContent).toMatch(/GithubBuddy/i);
     });
   });
 

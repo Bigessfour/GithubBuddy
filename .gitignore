@@ -39,3 +39,7 @@ coverage/
 
 # macOS
 **/.DS_Store
+
+# Finder “Duplicate” files (e.g. `README 2.md`, `file 2.ts`, `.gitattributes 2`) — never commit
+**/* 2
+**/* 2.*

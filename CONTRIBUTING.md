@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve **Platoon Companion** (npm package `githubbuddy`).
+Thanks for helping improve **GithubBuddy** (npm package `githubbuddy`).
 
 ## License
 
@@ -22,6 +22,8 @@ Course staff: upstream may still be aligning day-to-day practice with this workf
 npm install
 # If npm reports a peer dependency conflict (Vite 8 vs electron-vite), use:
 # npm install --legacy-peer-deps
+# Node 22.12+ required (see package.json engines). Do not use --ignore-scripts;
+# if Electron fails to start, run: npm run electron:install
 npm run lint
 npm test -- --run
 ```
@@ -53,7 +55,7 @@ Until **branch protection** is enabled on `main`, merges are not mechanically en
 
 ## `.cursor/` in this repository
 
-The [`.cursor/rules/`](.cursor/rules/) folder holds optional **Cursor IDE** guidance for AI-assisted editing. It does not affect `npm run dev`, tests, or builds.
+The [`.cursor/rules/`](.cursor/rules/) folder holds optional **Cursor IDE** guidance for AI-assisted editing (for example [`githubbuddy.md`](.cursor/rules/githubbuddy.md)). It does not affect `npm run dev`, tests, or builds.
 
 - **Cloning with Git:** the folder is part of the repo; you can leave it alone or browse it if you use Cursor.
 - **If you do not use Cursor** and prefer a quieter tree locally, you may delete `.cursor` after cloning; `git pull` may restore it on updates—that is normal for tracked files.

@@ -3,6 +3,7 @@ import { act, screen, fireEvent } from "@testing-library/react";
 import { StepCard } from "./StepCard";
 import type { Step } from "../types";
 import { renderWithToast } from "../test/renderWithToast";
+import { workspaceFolderIpcStubs } from "../test/workspaceFolderIpcStubs";
 
 const sampleStep: Step = {
   id: "s1",
@@ -83,6 +84,7 @@ describe("StepCard", () => {
 
   it("toasts when workspace set but executeCommand missing", async () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       getCourseContentScan: vi.fn(),
@@ -107,6 +109,7 @@ describe("StepCard", () => {
   it("does not run when user cancels confirm", () => {
     const executeCommand = vi.fn();
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand,
@@ -169,6 +172,7 @@ describe("StepCard", () => {
       return { success: true, output: "o" };
     });
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn().mockResolvedValue(null),
       selectUpstreamFolder: vi.fn().mockResolvedValue(null),
       executeCommand,
@@ -227,6 +231,7 @@ describe("StepCard", () => {
       .mockResolvedValue({ success: true, output: "" });
     const unsub = vi.fn();
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn().mockResolvedValue(null),
       selectUpstreamFolder: vi.fn().mockResolvedValue(null),
       executeCommand,
@@ -260,6 +265,7 @@ describe("StepCard", () => {
     const executeCommand = vi.fn().mockRejectedValue(new Error("ipc down"));
     const unsub = vi.fn();
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn().mockResolvedValue(null),
       selectUpstreamFolder: vi.fn().mockResolvedValue(null),
       executeCommand,
@@ -298,6 +304,7 @@ describe("StepCard", () => {
     }) => void = () => {};
     const executeCommand = vi.fn().mockResolvedValue({});
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn().mockResolvedValue(null),
       selectUpstreamFolder: vi.fn().mockResolvedValue(null),
       executeCommand,

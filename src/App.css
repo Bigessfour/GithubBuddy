@@ -184,7 +184,7 @@
 }
 
 /* 
-  Platoon Companion - Educational CSS
+  GithubBuddy - Educational CSS
   
   This stylesheet demonstrates clean, maintainable CSS for a learning-focused app.
   Key principles applied:
@@ -201,7 +201,7 @@
 
   The file is split into two parts:
   1. Base Vite template styles (variables, typography, existing hero)
-  2. Custom Platoon Companion styles (below)
+  2. Custom GithubBuddy styles (below)
 */
 
 .app-container {
@@ -444,6 +444,120 @@
 .hint {
   margin-top: 12px;
   font-size: 14px;
+  color: var(--text);
+}
+
+/* Day focus: course markdown from local clone */
+.day-focus {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.day-focus-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  color: var(--text-h);
+}
+
+.day-focus-subtitle {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.day-focus .file-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.day-focus .file-tab {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.day-focus .file-tab:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.day-focus .file-tab.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.day-focus .file-content .file-header h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: var(--text-h);
+  font-family: var(--mono);
+}
+
+.day-focus-read-controls {
+  margin-bottom: 10px;
+}
+
+.day-focus-height-label {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.day-focus-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.day-focus-slider-row input[type="range"] {
+  flex: 1;
+  min-width: 120px;
+  height: 8px;
+  accent-color: #2563eb;
+}
+
+.day-focus-height-tick {
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.day-focus-scroll {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  outline: none;
+}
+
+.day-focus-scroll:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-border);
+}
+
+.day-focus-scroll .markdown-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
   color: var(--text);
 }
 
@@ -756,6 +870,120 @@
   border-top: 1px solid var(--border);
   font-size: 13px;
   color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+.footer-how-it-works {
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.footer-how-it-works:hover {
+  color: var(--text-h);
+}
+
+.footer-how-it-works:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.process-intro-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.process-intro-dialog {
+  max-width: 520px;
+  width: 100%;
+  max-height: min(90vh, 640px);
+  overflow: auto;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: var(--shadow);
+}
+
+.process-intro-title {
+  margin: 0 0 16px;
+  font-size: 20px;
+  color: var(--text-h);
+}
+
+.process-intro-steps {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.process-intro-steps li {
+  margin-bottom: 12px;
+}
+
+.process-intro-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.process-intro-code {
+  font-size: 13px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.process-intro-footnote {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.95;
+}
+
+.process-intro-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.process-intro-primary {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: var(--bg);
+  background: var(--accent);
+}
+
+.process-intro-primary:hover {
+  filter: brightness(1.05);
+}
+
+.process-intro-primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 /* 
@@ -895,6 +1123,47 @@
   font-size: 13px;
   color: var(--text);
   font-style: italic;
+}
+
+.workspace-new-folder-hint {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted, var(--text));
+  margin: 0 0 14px;
+}
+
+.workspace-new-folder-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.workspace-new-folder-button:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Course / upstream: multi-paragraph help above the path row */
+.upstream-help-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.upstream-help-copy p {
+  margin: 0;
+}
+
+.upstream-help-copy .workspace-explanation {
+  margin-bottom: 0;
 }
 
 .upstream-path-row {

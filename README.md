@@ -1,4 +1,4 @@
-# Platoon Companion
+# GithubBuddy
 
 **Version 0.6** — desktop + web UI, safe command execution, and dynamic day focus from your local course clone.
 
@@ -6,8 +6,8 @@ A helpful desktop/web companion app for Code Platoon AI DevOps students. It guid
 
 ## Repository and naming
 
-- **Product name (in the app):** **Platoon Companion**
-- **GitHub repository slug:** **`githubbuddy`** — clone with `git clone https://github.com/YOUR_USERNAME/githubbuddy.git`, then `cd githubbuddy` (your local folder name matches the repo).
+- **Product name (in the app):** **GithubBuddy**
+- **GitHub repository:** **`GithubBuddy`** (npm package **`githubbuddy`**) — clone with `git clone https://github.com/YOUR_USERNAME/GithubBuddy.git`, then `cd GithubBuddy` (your local folder name matches the repo).
 - **npm package name:** `githubbuddy` (see [`package.json`](package.json)).
 
 Updating from an older clone: workspace/upstream keys in browser storage were renamed; you may need to **choose your workspace folder again** once.
@@ -16,7 +16,9 @@ Updating from an older clone: workspace/upstream keys in browser storage were re
 
 **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md) (PR workflow, checks, releases/tags).
 
-**Maintainers:** On GitHub, open the repo **About** settings and add a short description, topics (for example `education`, `electron`, `react`, `vite`, `typescript`, `code-platoon`), and confirm the **License** badge shows **MIT**. Optional: rename the GitHub repository to `platoon-companion` only if you want the URL to match the product name everywhere—otherwise keep **`githubbuddy`** and use this README’s clone line.
+**Course workflow reference:** [GIT Challenge Submission Workflow](docs/git-challenge-submission-workflow.docx) (`.docx` in [`docs/`](docs/)) — official-style submission steps for Git challenges; pairs with the guided checklist in the app. See also the [docs index](docs/README.md).
+
+**Maintainers:** On GitHub, open the repo **About** settings and add a short description, topics (for example `education`, `electron`, `react`, `vite`, `typescript`, `code-platoon`), and confirm the **License** badge shows **MIT**. Keep the repository name aligned with **GithubBuddy** so clone URLs and this README stay consistent.
 
 ## What Problem Does It Solve?
 
@@ -32,6 +34,13 @@ Many students are new to the terminal and GitHub best practices. This app remove
 - One-click **Run** buttons that execute allowlisted commands in your chosen workspace (with confirmation and streamed output in the desktop app)
 
 **Goal**: Turn every daily task into a repeatable, best-practice habit instead of copy-pasting commands you don't fully understand.
+
+### Curriculum alignment (GIT Challenge workflow)
+
+This project does not only _teach_ GitHub habits—it **follows the official Code Platoon Instructor GIT Challenge Submission Workflow** in what we show students: `wXdX-challenges` branch names, per-challenge folders under `weekX/dayY/`, the exact commit message format (`Complete week X day Y challenge Z`), PR title pattern (`WXDX - Challenge N - Your Name`), confirming `origin` / `upstream`, the **TA review complete** label, and the rule that new pushes update an open PR.
+
+- Checklist copy and commands live in [`src/data/days.ts`](src/data/days.ts) and match that guide 1:1 (with `{{WEEK}}` / `{{DAY}}` interpolation).
+- The instructor **`.gitignore`** appendix is checked in as [`docs/instructor-gitignore-template.txt`](docs/instructor-gitignore-template.txt) (same content as the Word guide); see also [`docs/git-challenge-submission-workflow.docx`](docs/git-challenge-submission-workflow.docx).
 
 ---
 
@@ -124,9 +133,9 @@ githubbuddy/
 2. **Enter the day** you're working on (e.g., "Week 2, Day 4" or simply "W2D4").
 3. **App looks up** the corresponding guidance data.
 4. **You see** a beautiful, numbered checklist with:
-   - Step title (e.g., "Create a feature branch")
-   - Best-practice explanation ("This keeps main clean and makes code review easier...")
-   - The exact command to run (`git checkout -b week2/day4-challenge`)
+   - Step title (e.g., "Create and check out the challenge branch for this day")
+   - Best-practice explanation (why the step matches the instructor workflow)
+   - The exact command to run (e.g. `git checkout -b w2d4-challenges`)
    - A big "Copy" button
 5. **Run from the app** (desktop): Choose your workspace folder → use **Run Command** on a step (confirmation + streamed output). The web build still uses copy-to-clipboard for commands.
 
@@ -155,7 +164,7 @@ All daily guidance lives in easy-to-edit files under `src/data/`. This means:
 
 Use this sequence when you first clone the repo or when you want to confirm everything works end-to-end.
 
-1. **Prerequisites** — Node.js 20+ and Git installed; clone this repository (your fork or the cohort remote you were given), e.g. `git clone https://github.com/YOUR_USERNAME/githubbuddy.git`, then `cd githubbuddy`.
+1. **Prerequisites** — Node.js **22.12+** and Git installed (see `package.json` `engines`); clone this repository (your fork or the cohort remote you were given), e.g. `git clone https://github.com/YOUR_USERNAME/githubbuddy.git`, then `cd githubbuddy`.
 
 2. **Install dependencies**
 
@@ -258,14 +267,14 @@ After saving, the new day immediately appears in the dropdowns. No rebuild requi
 
 ## Getting Started – Installation & Running (Windows & macOS)
 
-Platoon Companion can be run in two ways:
+GithubBuddy can be run in two ways:
 
 1. **Web version** (opens in your browser) – great for quick development and learning the UI.
 2. **Desktop version** (real native app window) – the full experience with future command execution.
 
 ### Prerequisites (both platforms)
 
-- Node.js 20+ (we recommend the LTS version)
+- Node.js **22.12+** (required by the pinned `electron` major; use current Node 22 LTS)
 - Git
 - For desktop: nothing extra needed — Electron downloads its own binaries on first run
 
@@ -394,7 +403,7 @@ We believe in testing early so the app stays reliable as we add features.
    - [GuidancePanel.tsx](src/components/GuidancePanel.tsx), [StepCard.tsx](src/components/StepCard.tsx), [CommandOutput.tsx](src/components/CommandOutput.tsx), [ProgressTracker.tsx](src/components/ProgressTracker.tsx), [DayFocus.tsx](src/components/DayFocus.tsx), [Tooltip.tsx](src/components/Tooltip.tsx), toast layer ([ToastProvider.tsx](src/context/ToastProvider.tsx), [useToast.ts](src/context/useToast.ts))
    - Hooks [useDayGuidance](src/hooks/useDayGuidance.ts), [useDayFocus](src/hooks/useDayFocus.ts)
 
-3. **Playwright (browser)** — Visual **presence** coverage for the Vite app (header, day/workspace/upstream chrome, toast region, footer, and branch-specific UI: guidance checklist with seven steps, **Day focus** when `data/course-content` exists, **no-guidance** for Week 3 Day 1, plus **Run** affordances when workspace is seeded via `e2e/storage/workspace-selected.json`). **Interaction smoke** tests cover selector-driven UI updates and checklist toggling when the guidance layout is active. Does not launch Electron; **Fetch upstream** is desktop-only and is intentionally out of scope here.
+3. **Playwright (browser)** — Visual **presence** coverage for the Vite app (header, day/workspace/upstream chrome, toast region, footer, and branch-specific UI: guidance checklist with nine steps, **Day focus** when `data/course-content` exists, **no-guidance** for Week 3 Day 1, plus **Run** affordances when workspace is seeded via `e2e/storage/workspace-selected.json`). **Interaction smoke** tests cover selector-driven UI updates and checklist toggling when the guidance layout is active. Does not launch Electron; **Fetch upstream** is desktop-only and is intentionally out of scope here.
 
 4. **Electron entrypoints** (`electron/main.ts`, `electron/preload.ts`) — Not unit-tested in isolation; they are thin wiring layers. We rely on **production build** (`npm run electron:build`), **lint/typecheck**, and the [desktop smoke checklist](#desktop-smoke-checklist-manual) for those paths. **Fetch upstream** still validates URLs in the main process (same `resolveValidatedUpstreamUrl` helper) so the UI cannot be the only gate.
 
@@ -524,6 +533,7 @@ The app can now load the **full content** of the lesson, lab, and challenge file
 - Select a Week and Day in the UI.
 - If you have cloned `https://github.com/CodePlatoon/aico-echo` into `data/course-content/aico-echo`, the app automatically reads all Markdown files in that day’s folder.
 - The full content is displayed instead of (or alongside) the app’s educational guidance.
+- When you use **Fetch upstream** in the desktop app, a read-only marker file **`GITHUBBUDDY_UPSTREAM.txt`** may appear in the course clone root (recording which URL was used). Older app versions created `PLATOON_COMPANION_UPSTREAM.txt`; a successful fetch removes that legacy file. You can delete either marker or add the name to `.gitignore` if you prefer.
 
 **Setup (one-time):**
 
@@ -542,7 +552,7 @@ If the clone is missing, the app shows a helpful message directing you to the RE
 
 ### v0.3 – Running as a Real Desktop App (Completed)
 
-We implemented the foundation for running Platoon Companion as a native macOS (and Windows/Linux) desktop application using Electron.
+We implemented the foundation for running GithubBuddy as a native macOS (and Windows/Linux) desktop application using Electron.
 
 **New commands added:**
 
@@ -575,7 +585,7 @@ This puts us on track to deliver a polished desktop experience while teaching st
 
 ### Cross-Platform Support (Windows & macOS)
 
-The Platoon Companion desktop app is designed to run on both **Windows** and **macOS** (and Linux) using the same codebase.
+The GithubBuddy desktop app is designed to run on both **Windows** and **macOS** (and Linux) using the same codebase.
 
 **Why this works (the documented way):**
 
@@ -716,6 +726,30 @@ Feel free to ask questions about any part of the stack — that's the whole poin
 ## Electron Desktop App – Troubleshooting & AI-Assisted Fixes
 
 During the implementation of the desktop (Electron) version and the "Fetch Upstream Repo Data" button, we encountered several non-obvious issues that are common when combining Vite + React + Electron. The AI coding assistant helped diagnose each one in real time using the running terminal output, DevTools console, and screenshots.
+
+### Problem: `Error: Electron uninstall` when running `npm run electron:dev`
+
+#### Symptom
+
+```text
+error during start dev server and electron app:
+Error: Electron uninstall
+    at getElectronPath (…/electron-vite/dist/chunks/…)
+```
+
+#### Root Cause
+
+The `electron` npm package did not finish downloading its OS-specific binary, so `node_modules/electron/path.txt` is missing or empty. That happens if lifecycle scripts were skipped (`--ignore-scripts`), install was interrupted, or `node_modules` was copied incompletely.
+
+#### Fix
+
+From the project root:
+
+```bash
+npm run electron:install
+```
+
+Or reinstall: `rm -rf node_modules && npm ci --legacy-peer-deps` (see [INSTALL.md](INSTALL.md)). `postinstall` runs the same ensure step automatically on a normal install.
 
 ### Problem 1: Preload Script Fails with "Cannot use import statement outside a module"
 

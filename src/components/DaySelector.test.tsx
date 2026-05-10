@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { DaySelector } from "./DaySelector";
 import { renderWithToast } from "../test/renderWithToast";
+import { workspaceFolderIpcStubs } from "../test/workspaceFolderIpcStubs";
 import { DEFAULT_UPSTREAM_REPO } from "../utils/upstreamRepoUrl";
 
 const mockHasLocal = vi.fn();
@@ -83,6 +84,7 @@ describe("DaySelector", () => {
       .fn()
       .mockResolvedValue({ success: true, message: "Done" });
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -108,6 +110,7 @@ describe("DaySelector", () => {
   it("fetch upstream: rejects non-GitHub URL and does not call IPC", async () => {
     const fetchUpstreamRepo = vi.fn();
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -143,6 +146,7 @@ describe("DaySelector", () => {
       .fn()
       .mockResolvedValue({ success: true, message: "Cloned" });
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -165,6 +169,7 @@ describe("DaySelector", () => {
 
   it("shows course layout alert in desktop mode when clone has no week/day folders", () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -184,6 +189,7 @@ describe("DaySelector", () => {
 
   it("fetch upstream: FETCH_FAILED toast includes GitHub auth guidance", async () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -209,6 +215,7 @@ describe("DaySelector", () => {
 
   it("fetch upstream: GH_CLI_MISSING shows install-gh toast copy", async () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -234,6 +241,7 @@ describe("DaySelector", () => {
 
   it("fetch upstream: shows error on failure", async () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -255,6 +263,7 @@ describe("DaySelector", () => {
 
   it("fetch upstream: success without message uses default copy", async () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -280,6 +289,7 @@ describe("DaySelector", () => {
 
   it("fetch upstream: failure without error shows unknown", async () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -299,6 +309,7 @@ describe("DaySelector", () => {
 
   it("fetch upstream: catch path", async () => {
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),
@@ -327,6 +338,7 @@ describe("DaySelector", () => {
         }),
     );
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn(),
       executeCommand: vi.fn(),

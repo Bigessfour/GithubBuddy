@@ -1,12 +1,12 @@
-# Installation guide — Platoon Companion
+# Installation guide — GithubBuddy
 
 This document is the **short path to a working install** on your machine. For architecture, roadmap, and deep troubleshooting, see [README.md](README.md).
 
-The **GitHub repository** is named **`githubbuddy`**; after `git clone` you normally `cd githubbuddy`. The app title in the UI remains **Platoon Companion**.
+The **GitHub repository** is **`GithubBuddy`** (npm package `githubbuddy`); after `git clone` you normally `cd GithubBuddy` (folder name matches the repo). The app title in the UI is **GithubBuddy**.
 
 ## Requirements
 
-- **Node.js 20+** ([nodejs.org](https://nodejs.org/))
+- **Node.js 22.12+** ([nodejs.org](https://nodejs.org/)) — matches the `electron` package and CI; `package.json` declares `engines.node`.
 - **Git**
 - **GitHub CLI (`gh`)** (recommended for **private** `https://github.com/...` course repos in the desktop app) — [cli.github.com](https://cli.github.com/). If `git clone` / `git pull` fails for missing HTTPS credentials, the app can open a browser sign-in via `gh`; SSH remote URLs use your normal SSH setup instead.
 - **macOS, Windows, or Linux** (desktop commands are the same everywhere)
@@ -34,11 +34,14 @@ npm install --legacy-peer-deps
 
 The same resolution is used in **GitHub Actions** (`npm ci --legacy-peer-deps` in [.github/workflows/test.yml](.github/workflows/test.yml)), so CI matches a typical local install.
 
-`postinstall` may run the course setup helper (`setup-course`); follow any prompts, or run explicitly:
+`postinstall` runs **`scripts/ensure-electron.js`** (downloads the Electron binary if `node_modules/electron/path.txt` is missing — avoids `Error: Electron uninstall` from electron-vite) and then the course setup helper (`setup-course`). Follow any prompts, or run explicitly:
 
 ```bash
+npm run electron:install   # repair Electron binary only (safe to re-run)
 npm run setup-course
 ```
+
+Never use `npm install --ignore-scripts` for this project unless you run `npm run electron:install` afterward.
 
 For dynamic **Day focus** content, you need the course materials under `data/course-content/aico-echo` (see README → v0.6 / setup-course).
 
@@ -75,7 +78,7 @@ When you run the **desktop** app, runtime logs are appended to a daily file:
 | Development (`npm run electron:dev`) | Project root: `logs/githubbuddy-YYYY-MM-DD.log` |
 | Packaged app (if you build installers later) | OS app data directory: `…/logs/githubbuddy-YYYY-MM-DD.log` |
 
-The `logs/` folder is gitignored except `logs/.gitkeep`. After a desktop session, open today’s file to inspect startup, IPC, and renderer events. Older dev builds may have created `platoon-companion-*.log`; current builds use **`githubbuddy-*.log`**.
+The `logs/` folder is gitignored except `logs/.gitkeep`. After a desktop session, open today’s file to inspect startup, IPC, and renderer events. Older local builds may have used other log filename prefixes; current builds use **`githubbuddy-*.log`**.
 
 **Browser-only** (`npm run dev`) does **not** write to that file; use the browser developer console instead.
 

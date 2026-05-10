@@ -37,7 +37,7 @@ Set via `gh repo edit` (2026-05-10). Snapshot from `gh repo view Bigessfour/Gith
 
 ```json
 {
-  "description": "Platoon Companion — interactive GitHub workflow guide for Code Platoon AI DevOps students (web + Electron desktop).",
+  "description": "GithubBuddy — interactive GitHub workflow guide for Code Platoon AI DevOps students (web + Electron desktop).",
   "licenseInfo": { "key": "mit", "name": "MIT License" },
   "repositoryTopics": [
     "code-platoon",
@@ -78,7 +78,7 @@ Commands used:
 
 ```bash
 git checkout main && git pull
-git tag -a v0.6.0 -m "v0.6.0 — Platoon Companion (githubbuddy)"
+git tag -a v0.6.0 -m "v0.6.0 — GithubBuddy (githubbuddy)"
 git push origin v0.6.0
 gh release create v0.6.0 --repo Bigessfour/GithubBuddy --title "v0.6.0" --notes "…"
 ```

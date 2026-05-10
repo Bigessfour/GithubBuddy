@@ -1,11 +1,14 @@
 {
   "name": "githubbuddy",
-  "description": "Platoon Companion — Code Platoon GitHub workflow learning app (web + Electron desktop).",
+  "description": "GithubBuddy — Code Platoon GitHub workflow learning app (web + Electron desktop).",
   "license": "MIT",
   "private": true,
   "version": "0.6.0",
   "type": "module",
   "main": "dist-electron/main/main.js",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -18,12 +21,16 @@
     "test:e2e:ci": "playwright test e2e/visual/inventory.spec.ts e2e/functional/app-interactions.spec.ts",
     "test:e2e:update-snapshots": "playwright test e2e/visual/screenshots.spec.ts --update-snapshots",
     "vite:version": "vite --version",
+    "electron:install": "node scripts/ensure-electron.js",
+    "preelectron:dev": "node scripts/ensure-electron.js",
     "electron:dev": "electron-vite dev",
+    "preelectron:build": "node scripts/ensure-electron.js",
     "electron:build": "electron-vite build",
     "electron:clean": "node -e \"const fs=require('fs');['out','dist-electron'].forEach(d=>{try{fs.rmSync(d,{recursive:true,force:true});}catch(e){}})\"",
+    "preelectron:preview": "node scripts/ensure-electron.js",
     "electron:preview": "cross-env NODE_ENV=production electron .",
     "setup-course": "node scripts/setup-course.js",
-    "postinstall": "node scripts/setup-course.js --auto"
+    "postinstall": "node scripts/ensure-electron.js && node scripts/setup-course.js --auto"
   },
   "dependencies": {
     "react": "^19.2.5",

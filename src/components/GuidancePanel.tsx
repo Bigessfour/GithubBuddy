@@ -16,7 +16,7 @@ import {
 } from "../content/githubWorkflowHints";
 import { formatCommandErrorHelpForLog } from "../utils/shellCommandErrorHelp";
 
-const STORAGE_PREFIX = "platoon-companion-progress";
+const STORAGE_PREFIX = "githubbuddy-progress";
 
 type GuidancePanelProps = {
   /** `${week}-${day}` — changing parent `key` remounts this panel and reloads progress from localStorage. */
@@ -136,10 +136,13 @@ export function GuidancePanel({
         unsubOut?.();
         if (!result.success) {
           stoppedEarly = true;
-          const help = formatCommandErrorHelpForLog(
-            result.error,
-            result.exitCode,
-          );
+          const { error: errText, exitCode } = result as {
+            success: boolean;
+            output: string;
+            error?: string;
+            exitCode?: number;
+          };
+          const help = formatCommandErrorHelpForLog(errText, exitCode);
           setBatchLog(
             (prev) =>
               `${prev}\nStopped: command failed.${result.error ? `\n${result.error}` : ""}${help}`,

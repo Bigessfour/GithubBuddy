@@ -19,6 +19,13 @@ declare global {
         meta?: unknown;
       }) => Promise<void>;
       selectWorkspace: () => Promise<string | null>;
+      selectWorkspaceParent: () => Promise<string | null>;
+      createWorkspaceFolder: (
+        parentPath: string,
+        folderName: string,
+      ) => Promise<
+        { ok: true; path: string } | { ok: false; error: string }
+      >;
       selectUpstreamFolder: () => Promise<string | null>;
       executeCommand: (
         command: string,

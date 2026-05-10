@@ -5,7 +5,11 @@
       "origin": "http://localhost:5173",
       "localStorage": [
         {
-          "name": "platoon-companion-workspace",
+          "name": "githubbuddy-intro-dismissed-v1",
+          "value": "1"
+        },
+        {
+          "name": "githubbuddy-workspace",
           "value": "/demo/workspace-for-visual-e2e"
         }
       ]

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent } from "@testing-library/react";
 import { UpstreamPathSelector } from "./UpstreamPathSelector";
 import { renderWithToast } from "../test/renderWithToast";
+import { workspaceFolderIpcStubs } from "../test/workspaceFolderIpcStubs";
 
 describe("UpstreamPathSelector", () => {
   beforeEach(() => {
@@ -52,13 +53,14 @@ describe("UpstreamPathSelector", () => {
   it("Browse ignores null selection from Electron", async () => {
     const onUpstreamChange = vi.fn();
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn().mockResolvedValue(null),
       executeCommand: vi.fn(),
       getCourseContentScan: vi.fn(),
       getDayFocusContent: vi.fn(),
       fetchUpstreamRepo: vi.fn(),
-    } as unknown as NonNullable<Window["electronAPI"]>;
+    };
     renderWithToast(
       <UpstreamPathSelector
         key="__nullpick__"
@@ -76,6 +78,7 @@ describe("UpstreamPathSelector", () => {
   it("Browse uses native dialog in Electron", async () => {
     const onUpstreamChange = vi.fn();
     window.electronAPI = {
+      ...workspaceFolderIpcStubs(),
       selectWorkspace: vi.fn(),
       selectUpstreamFolder: vi.fn().mockResolvedValue("/picked"),
       executeCommand: vi.fn(),
