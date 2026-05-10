@@ -25,12 +25,12 @@ Turn on the subset that matches how strictly you want to run the cohort upstream
 | **Require linear history** | Optional; keeps `main` easy to read (no merge commits) if you always squash or rebase-merge. |
 | **Require conversation resolution before merging** | Optional; useful once you have multi-reviewer PRs. |
 
-**Required status checks** (type to search after they have run on at least one PR/push):
+**Required status checks** — always pick from GitHub’s **search list** (do not paste a name GitHub doesn’t offer). After [Test](workflows/test.yml) has run at least once, the UI usually shows them with a **`Test /`** prefix (workflow name + job name):
 
-- `Lint, tests, coverage, web + electron build`
-- `Playwright (inventory + interactions)`
+- `Test / Lint, tests, coverage, web + electron build`
+- `Test / Playwright (inventory + interactions)`
 
-If GitHub does not list them yet, push a branch, open a PR, or wait for Actions to finish once so the checks register.
+Some screens show only the job name; use whatever appears for **your** repo. If the list is empty, wait for Actions to complete on `main` or on a PR, then try again. If saving fails with **“Rule not valid”**, see [BRANCH_PROTECTION.md § troubleshooting](BRANCH_PROTECTION.md#if-github-shows-rule-not-valid-or-wont-save) and GitHub’s [Troubleshooting required status checks](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks).
 
 ### Bypass (optional)
 
