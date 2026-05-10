@@ -12,7 +12,7 @@ This project is under the [MIT License](LICENSE). By contributing, you agree you
 2. Create a **short-lived branch** (for example `feat/short-description` or `fix/issue-summary`).
 3. Make focused commits using [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`, …).
 4. **Open a Pull Request** into the upstream default branch (`main`) with a clear description and any test/lint notes.
-5. Wait for **CI** (lint, tests, build, Playwright inventory where configured) to pass.
+5. Wait for **CI** (lint, tests, build, Playwright browser tests where configured) to pass.
 
 Course staff: upstream may still be aligning day-to-day practice with this workflow; students should still follow the steps above on **their forks**.
 
@@ -20,9 +20,13 @@ Course staff: upstream may still be aligning day-to-day practice with this workf
 
 ```bash
 npm install
+# If npm reports a peer dependency conflict (Vite 8 vs electron-vite), use:
+# npm install --legacy-peer-deps
 npm run lint
 npm test -- --run
 ```
+
+CI uses `npm ci --legacy-peer-deps` for the same reason—see [INSTALL.md](INSTALL.md).
 
 If you change UI or Electron behavior that e2e covers, also run:
 
@@ -42,6 +46,10 @@ git push origin v0.6.0
 ```
 
 Then on GitHub: **Releases → Draft a new release**, choose tag `v0.6.0`, add release notes, and publish.
+
+## Branch protection (maintainers)
+
+Until **branch protection** is enabled on `main`, merges are not mechanically enforced to go through PRs. Turn it on in GitHub (**Settings → Branches**) so required checks (including Playwright) must pass—see **Enabling Branch Protection** in [README.md](README.md#enabling-branch-protection-required-for-professional-workflow).
 
 ## `.cursor/` in this repository
 

@@ -80,7 +80,7 @@ jobs:
         run: npm run electron:build
 
   playwright:
-    name: Playwright (visual inventory)
+    name: Playwright (inventory + interactions)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -98,7 +98,7 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run visual presence tests (no screenshot baselines on Linux)
+      - name: Run Playwright inventory + interaction smoke (no screenshot baselines on Linux)
         run: npm run test:e2e:ci
 #
-# Status checks: "Test / Lint, tests, coverage, web + electron build" and "Test / Playwright (visual inventory)"
+# Status checks: "Test / Lint, tests, coverage, web + electron build" and "Test / Playwright (inventory + interactions)"

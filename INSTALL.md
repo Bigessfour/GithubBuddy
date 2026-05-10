@@ -2,6 +2,8 @@
 
 This document is the **short path to a working install** on your machine. For architecture, roadmap, and deep troubleshooting, see [README.md](README.md).
 
+The **GitHub repository** is named **`githubbuddy`**; after `git clone` you normally `cd githubbuddy`. The app title in the UI remains **Platoon Companion**.
+
 ## Requirements
 
 - **Node.js 20+** ([nodejs.org](https://nodejs.org/))
@@ -12,8 +14,8 @@ This document is the **short path to a working install** on your machine. For ar
 ## 1. Get the code
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/platoon-companion.git
-cd platoon-companion
+git clone https://github.com/YOUR_USERNAME/githubbuddy.git
+cd githubbuddy
 ```
 
 Use your fork URL or the cohort remote you were given.
@@ -29,6 +31,8 @@ If npm reports a peer dependency conflict between `electron-vite` and Vite 8:
 ```bash
 npm install --legacy-peer-deps
 ```
+
+The same resolution is used in **GitHub Actions** (`npm ci --legacy-peer-deps` in [.github/workflows/test.yml](.github/workflows/test.yml)), so CI matches a typical local install.
 
 `postinstall` may run the course setup helper (`setup-course`); follow any prompts, or run explicitly:
 
@@ -68,10 +72,10 @@ When you run the **desktop** app, runtime logs are appended to a daily file:
 
 | Mode | Location |
 |------|----------|
-| Development (`npm run electron:dev`) | Project root: `logs/platoon-companion-YYYY-MM-DD.log` |
-| Packaged app (if you build installers later) | OS app data directory: `…/logs/platoon-companion-YYYY-MM-DD.log` |
+| Development (`npm run electron:dev`) | Project root: `logs/githubbuddy-YYYY-MM-DD.log` |
+| Packaged app (if you build installers later) | OS app data directory: `…/logs/githubbuddy-YYYY-MM-DD.log` |
 
-The `logs/` folder is gitignored except `logs/.gitkeep`. After a desktop session, open today’s file to inspect startup, IPC, and renderer events.
+The `logs/` folder is gitignored except `logs/.gitkeep`. After a desktop session, open today’s file to inspect startup, IPC, and renderer events. Older dev builds may have created `platoon-companion-*.log`; current builds use **`githubbuddy-*.log`**.
 
 **Browser-only** (`npm run dev`) does **not** write to that file; use the browser developer console instead.
 

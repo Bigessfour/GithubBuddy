@@ -93,7 +93,7 @@ References:
 
 - Deeper Playwright flows (Electron window, filesystem) beyond the current **browser visual** suite
 
-**Already in use:** Vitest and React Testing Library (`npm test`), plus **Playwright** for browser visual inventory and full-page screenshots (`npm run test:e2e`). Setup follows the official [Playwright installation guide](https://playwright.dev/docs/intro); install browsers once with `npx playwright install chromium`.
+**Already in use:** Vitest and React Testing Library (`npm test`), plus **Playwright** for browser visual inventory, lightweight interaction smoke tests, and full-page screenshots (`npm run test:e2e`). Setup follows the official [Playwright installation guide](https://playwright.dev/docs/intro); install browsers once with `npx playwright install chromium`.
 
 ---
 
@@ -146,7 +146,7 @@ All daily guidance lives in easy-to-edit files under `src/data/`. This means:
 - ✅ Workspace folder picker, command preview, and streaming command execution
 - ✅ Dynamic week/day scanning and **day focus** markdown loaded from a local course clone (via preload)
 - ✅ Guidance panel checklist with persisted progress; upstream repo setup script (`npm run setup-course`)
-- ✅ Playwright **browser** inventory in CI (presence checks + optional screenshot baselines locally)
+- ✅ Playwright **browser** inventory + interaction smoke in CI (optional screenshot baselines locally)
 - 🔜 Broader day coverage; optional **Electron-window** E2E if you want stricter release checks
 
 ---
@@ -193,7 +193,7 @@ Use this sequence when you first clone the repo or when you want to confirm ever
 
    Confirm the native window shows the same UI, workspace selection, and (if applicable) **Fetch upstream** / refreshed scan after pulling course content.
 
-6. **Quality gate (before a PR)** — matches [CI](.github/workflows/test.yml) (`eslint`, Vitest with coverage thresholds, production **web** build, **Electron** bundle build, Playwright **inventory** on Ubuntu):
+6. **Quality gate (before a PR)** — matches [CI](.github/workflows/test.yml) (`eslint`, Vitest with coverage thresholds, production **web** build, **Electron** bundle build, Playwright **inventory + interactions** on Ubuntu):
 
    ```bash
    npm run lint
@@ -202,7 +202,7 @@ Use this sequence when you first clone the repo or when you want to confirm ever
    npm run test:e2e:ci
    ```
 
-   For a quicker loop while coding, `npm test` (watch) or `npm test -- --run` skips the coverage threshold check. Full Playwright + screenshot baselines: `npm run test:e2e` (see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts)); refresh PNGs with `npm run test:e2e:update-snapshots`.
+   For a quicker loop while coding, `npm test` (watch) or `npm test -- --run` skips the coverage threshold check. Full Playwright + screenshot baselines: `npm run test:e2e` (see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts) and [e2e/functional/app-interactions.spec.ts](e2e/functional/app-interactions.spec.ts)); refresh PNGs with `npm run test:e2e:update-snapshots`.
 
 7. **Production-style desktop check** (catches wrong dev-server URL or stale build output)
 
@@ -380,7 +380,7 @@ We believe in testing early so the app stays reliable as we add features.
 
 - `npm test` — Vitest watch mode for development
 - `npm run test:coverage` — same suite with V8 coverage; **must meet minimum thresholds** in [vitest.config.ts](vitest.config.ts) (CI runs this, not 100% gate — raise thresholds as coverage improves)
-- `npm run test:e2e:ci` — Playwright **visual inventory** only (fast on Linux CI; asserts every listed user-facing control is present — see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts))
+- `npm run test:e2e:ci` — Playwright **visual inventory** plus a small **interaction** suite (badge updates, empty state, checklist checkbox when guidance is active — see [e2e/visual/user-facing-inventory.ts](e2e/visual/user-facing-inventory.ts) and [e2e/functional/app-interactions.spec.ts](e2e/functional/app-interactions.spec.ts))
 - `npm run test:e2e` — full Playwright run including **full-page screenshot** comparisons (baselines are OS-specific; Chromium snapshots live next to [e2e/visual/screenshots.spec.ts](e2e/visual/screenshots.spec.ts))
 
 ### Layers in this repo
@@ -394,7 +394,7 @@ We believe in testing early so the app stays reliable as we add features.
    - [GuidancePanel.tsx](src/components/GuidancePanel.tsx), [StepCard.tsx](src/components/StepCard.tsx), [CommandOutput.tsx](src/components/CommandOutput.tsx), [ProgressTracker.tsx](src/components/ProgressTracker.tsx), [DayFocus.tsx](src/components/DayFocus.tsx), [Tooltip.tsx](src/components/Tooltip.tsx), toast layer ([ToastProvider.tsx](src/context/ToastProvider.tsx), [useToast.ts](src/context/useToast.ts))
    - Hooks [useDayGuidance](src/hooks/useDayGuidance.ts), [useDayFocus](src/hooks/useDayFocus.ts)
 
-3. **Playwright (browser)** — Visual **presence** coverage for the Vite app: header, day/workspace/upstream chrome, toast region, footer, and branch-specific UI (guidance checklist with seven steps, **Day focus** when `data/course-content` exists, **no-guidance** empty state for Week 3 Day 1, plus **Run** affordances when workspace is seeded via `e2e/storage/workspace-selected.json`). Does not launch Electron; **Fetch upstream** is desktop-only and is intentionally out of scope here.
+3. **Playwright (browser)** — Visual **presence** coverage for the Vite app (header, day/workspace/upstream chrome, toast region, footer, and branch-specific UI: guidance checklist with seven steps, **Day focus** when `data/course-content` exists, **no-guidance** for Week 3 Day 1, plus **Run** affordances when workspace is seeded via `e2e/storage/workspace-selected.json`). **Interaction smoke** tests cover selector-driven UI updates and checklist toggling when the guidance layout is active. Does not launch Electron; **Fetch upstream** is desktop-only and is intentionally out of scope here.
 
 4. **Electron entrypoints** (`electron/main.ts`, `electron/preload.ts`) — Not unit-tested in isolation; they are thin wiring layers. We rely on **production build** (`npm run electron:build`), **lint/typecheck**, and the [desktop smoke checklist](#desktop-smoke-checklist-manual) for those paths. **Fetch upstream** still validates URLs in the main process (same `resolveValidatedUpstreamUrl` helper) so the UI cannot be the only gate.
 
@@ -661,7 +661,7 @@ describe("getDayGuidance", () => {
    Duration  81ms (transform 15ms, setup 0ms, import 20ms, tests 1ms, environment 0ms)
 ```
 
-That sample output is from the first data-layer tests only. The suite now covers helpers, Electron modules, hooks, RTL component tests, and Playwright browser inventory; run `npm test -- --run` for the Vitest count and `npm run test:e2e:ci` for Playwright. **Continuous integration** runs `npm run lint`, `npm run test:coverage` (minimum thresholds in [vitest.config.ts](vitest.config.ts)), `npm run build`, and `npm run test:e2e:ci` — see [.github/workflows/test.yml](.github/workflows/test.yml).
+That sample output is from the first data-layer tests only. The suite now covers helpers, Electron modules, hooks, RTL component tests, and Playwright browser tests (inventory + interactions); run `npm test -- --run` for the Vitest count and `npm run test:e2e:ci` for Playwright. **Continuous integration** runs `npm run lint`, `npm run test:coverage` (minimum thresholds in [vitest.config.ts](vitest.config.ts)), `npm run build`, and `npm run test:e2e:ci` — see [.github/workflows/test.yml](.github/workflows/test.yml).
 
 ### Enabling Branch Protection (Required for Professional Workflow)
 
@@ -670,7 +670,7 @@ Branch protection is how this **upstream** repo can match the workflow the app t
 Now that CI exists, protect the `main` branch so that:
 
 - Every change must come through a Pull Request
-- Required **status checks** (from CI: lint, tests with coverage, build, Playwright inventory) must pass before merging is allowed
+- Required **status checks** (from CI: lint, tests with coverage, build, Playwright browser tests) must pass before merging is allowed
 
 **Step-by-step (with official documentation links):**
 
@@ -681,7 +681,7 @@ Now that CI exists, protect the `main` branch so that:
      → Documentation: [About protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-pull-request-reviews-before-merging)
 
    - **Require status checks to pass before merging**  
-     → Select **"Test / Lint, tests, coverage, build"** and **"Test / Playwright (visual inventory)"** (both from [.github/workflows/test.yml](.github/workflows/test.yml))  
+     → Select **"Test / Lint, tests, coverage, build"** and **"Test / Playwright (inventory + interactions)"** (both from [.github/workflows/test.yml](.github/workflows/test.yml))  
      → Documentation: [Require status checks before merging](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches#require-status-checks-before-merging)
 
 3. Save the rule.
