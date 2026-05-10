@@ -21,6 +21,10 @@ name: Test
 permissions:
   contents: read
 
+# GitHub sets CI=true automatically; postinstall (setup-course --auto) skips clone when CI is set.
+env:
+  CI: true
+
 # When should this workflow run?
 # - push to any branch: so we catch broken tests immediately
 # - pull_request targeting any branch: so PRs cannot be merged if tests fail

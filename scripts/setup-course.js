@@ -3,28 +3,17 @@
 /**
  * Automated Secure Upstream Repo Setup Script (v0.6)
  *
- * This script helps students bring the private Code Platoon upstream repo
- * into the correct location so the dynamic day focus feature works.
- *
- * It follows GitHub best practices for handling private repositories:
- * - Recommends fine-grained Personal Access Tokens (PAT) with minimal scopes
- * - Recommends SSH keys for authentication
- * - Never stores credentials
- * - Warns about private vs public repo implications
+ * ESM — this project uses `"type": "module"`; do not use `require` here.
  *
  * Usage:
  *   node scripts/setup-course.js          # Interactive mode
- *   node scripts/setup-course.js --auto   # Non-interactive with confirmation (for postinstall)
- *
- * Documentation links shown to the student:
- * - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
- * - https://docs.github.com/en/authentication/connecting-to-github-with-ssh
+ *   node scripts/setup-course.js --auto   # postinstall (skips clone in CI)
  */
 
-const readline = require("readline");
-const { execSync } = require("child_process");
-const fs = require("fs");
-const path = require("path");
+import readline from "readline";
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
 
 const TARGET_DIR = path.join(
   process.cwd(),
@@ -96,7 +85,7 @@ async function runInteractive() {
     console.log(
       "The app will now load full day focus content from the upstream materials.\n",
     );
-  } catch (err) {
+  } catch {
     console.error(
       "\n❌ Clone failed. Please check your authentication and try again.",
     );
@@ -107,6 +96,13 @@ async function runInteractive() {
 }
 
 async function runAuto() {
+  if (process.env.CI === "true") {
+    console.log(
+      "[setup-course] CI=true — skipping optional upstream clone (not needed for tests/build).",
+    );
+    return;
+  }
+
   if (fs.existsSync(TARGET_DIR)) {
     console.log("Upstream repo already present. Skipping setup.");
     return;
@@ -124,7 +120,7 @@ async function runAuto() {
     return;
   }
 
-  const url = DEFAULT_UPSTREAM; // In a real version we could allow override, but keep simple for --auto
+  const url = DEFAULT_UPSTREAM;
   console.log(`Cloning ${url}...`);
 
   try {
@@ -132,7 +128,7 @@ async function runAuto() {
     console.log(
       "✅ Upstream repo ready. Full day focus feature is now active.",
     );
-  } catch (err) {
+  } catch {
     console.error("Clone failed. Run `npm run setup-course` manually later.");
   }
 }
@@ -140,7 +136,7 @@ async function runAuto() {
 const isAuto = process.argv.includes("--auto");
 
 if (isAuto) {
-  runAuto().catch(console.error);
+  await runAuto();
 } else {
-  runInteractive().catch(console.error);
+  await runInteractive();
 }
